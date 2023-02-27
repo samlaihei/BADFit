@@ -19,7 +19,7 @@ def calcFlux(redshift, freq, power, epower):
 ########
 
 redshift = 4.692
-datafile = 'data/J2157_photometry_fixed.csv' 
+datafile = 'data/example.csv' 
 
 pdata = pd.read_csv(datafile)
 
@@ -31,7 +31,7 @@ lams, flux, eflux = calcFlux(redshift, inputFreq, inputPower, inputPowerError)
 
 
 
-J2157 = BADFit.BADFit('test_J2157', 'SLIMBH', lams, flux, eflux, redshift, ra=329.36758, dec=-36.03752)
+J2157 = BADFit.BADFit('example', 'SLIMBH', lams, flux, eflux, redshift, ra=329.36758, dec=-36.03752)
 
 J2157.runMCMC(nwalkers=128, niter=256)
 
