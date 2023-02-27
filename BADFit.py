@@ -153,8 +153,8 @@ class BADFit():
 			#######################
 			prior_file = 'prior/mass_function.csv'
 			pdata = pd.read_csv(prior_file)
-			self.prior_mbh = pdata['Mbh'].to_numpy()
-			self.prior_lnlike = pdata['logLikelihood'].to_numpy()
+			self.massFunctionMbh = pdata['Mbh'].to_numpy()
+			self.massFunctionLnLike = pdata['logLikelihood'].to_numpy()
 		
 		#####################
 		# Data Manipulation #
@@ -203,6 +203,9 @@ class BADFit():
 			print(c.analysis.get_summary())
 			
 		self.createPlot(samples, likelihoods, self.data, self.z)
+
+
+
 
 	# -------------------------------------------------------------- #
 	
@@ -471,7 +474,7 @@ class BADFit():
 				return -np.inf # if priors not satisfied
 		lnprior = 0.0
 		if self.priorMassFunction:
-			lnprior = prior_lnlike[np.argmin(np.abs(prior_mbh-current_params[mbhIndex]))]
+			lnprior = self.massFunctionLnLike[np.argmin(np.abs(self.massFunctionMbh-current_params[mbhIndex]))]
 		elif self.priorMbh > 0:
 			lnprior = -0.5*((current_params[mbhIndex] - self.priorMbh)/self.priorMbhSigma)**2 
 		return lnprior 
