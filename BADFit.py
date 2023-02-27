@@ -8,11 +8,35 @@
 ###################
 # Version History #
 ###################
-# V1.0 - Forked from AD_Fitting_v1, more user friendly interface
-# 	   - Removed data manipulation component, but kept extinction
-
+# V1.0 - Forked from AD_Fitting_v1, more user friendly
+# 	
+#
+#
+#
+#
+#
+#
 # ---------------------------------------------------------------
 
+#########
+# To Do #
+#########
+# Rest-frame, observed frame transform
+# New class for spectra data handling, fauxtometry, and corrected photometry
+#
+#
+#
+#
+
+#######################################
+#  ____          _____  ______ _ _    #
+# |  _ \   /\   |  __ \|  ____(_) |   #
+# | |_) | /  \  | |  | | |__   _| |_  #
+# |  _ < / /\ \ | |  | |  __| | | __| #
+# | |_) / ____ \| |__| | |    | | |_  #
+# |____/_/    \_\_____/|_|    |_|\__| #
+#                                     #
+#######################################                                    
 
 ###################
 # Import Packages #
