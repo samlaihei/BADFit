@@ -97,6 +97,9 @@ class BADFit():
 			self.data = self.calcPower(lam, flux, eflux)
 		else:
 			self.data = self.calcPower(lam, flux, eflux)
+			
+		self.returnModel(self.modelChoice)
+
 		
         
 
@@ -126,11 +129,6 @@ class BADFit():
 			
 			
 		"""
-		
-		#####################################
-		# Initialise model and its x-extent #
-		#####################################
-		self.returnModel(self.modelChoice)
 
 		#########################
 		# Extinction Correction #
@@ -419,7 +417,7 @@ class BADFit():
 		return prior_result+self.residual(bestfitp, data_freq, data_power, data_epower)
 	
 	def mcmcMain(self, p0, nwalkers, niter, ndim, lnprob, data):
-		filename = self.name+'.h5'
+		filename = 'output/'+self.name+'.h5'
 		backend = emcee.backends.HDFBackend(filename)
 		sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=data, backend=backend)
 
@@ -482,7 +480,7 @@ class BADFit():
 		return [lams, flux, eflux]
 	
 	def extinction_GC10_MEC(self, Av, lams, flux, eflux): # lams input in rest frame
-		ext_file = '/Users/samlaihei/Desktop/ANU_PHD/J2157_Fitting/extinction/G10_MEC.csv'
+		ext_file = 'G10_MEC.csv'
 		pdata = pd.read_csv(ext_file)
 		wavs = pdata['Wavelength'].to_numpy() # in angstrom
 		ext = pdata['Extinction'].to_numpy()
@@ -640,17 +638,16 @@ class BADFit():
 
 		ax.tick_params(axis='both', which='both', direction='in', labelbottom=False, labelleft=False, top=True, right=True, labeltop=True, labelright=True)
 		ax.tick_params(axis='both', which='minor', labelright=False, labeltop=False)
-		plt.savefig(self.name+'.png', dpi=200, bbox_inches='tight')
+		plt.savefig('output/'+self.name+'.png', dpi=200, bbox_inches='tight')
 		return ax
 
-	def createPlotFromFile(self, h5File, modelChoice, nwalkers, niter):
-		self.returnModel(modelChoice)
-		chain_filename = h5File
+	def createPlotFromFile(self, nwalkers, niter):
+		chain_filename = 'output/'+self.name+'.h5'
 
 		with h5py.File(chain_filename, "r") as f:
 			samples = np.array(f['mcmc']['chain'])
 			likelihoods = np.array(f['mcmc']['log_prob'])
-	
+			
 			ndim = len(samples[0][0])
 			samples = np.ndarray.flatten(samples)
 			samples = samples.reshape(int(len(samples)/ndim), ndim)

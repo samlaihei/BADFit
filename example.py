@@ -30,10 +30,9 @@ inputPowerError = pdata['e_Power'].to_numpy()
 lams, flux, eflux = calcFlux(redshift, inputFreq, inputPower, inputPowerError)
 
 
-
 J2157 = BADFit.BADFit('example', 'SLIMBH', lams, flux, eflux, redshift, ra=329.36758, dec=-36.03752)
-#J2157.createPlotFromFile('example.h5', 'SLIMBH', 128, 256)
-J2157.runMCMC(nwalkers=128, niter=256)
+J2157.createPlotFromFile(128, 256)
+#J2157.runMCMC(nwalkers=128, niter=256)
 
 
 
