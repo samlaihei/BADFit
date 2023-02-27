@@ -61,26 +61,37 @@ from dust_extinction.parameter_averages import G16
 
 class BADFit():
 
-	def __init__(self, name, modelChoice, lam, flux, eflux, z, rest=True, ra=-999, dec=-999):
+	#################
+	# Main Routines #
+	#################
+	
+	def __init__(self, name, modelChoice, lam, flux, eflux, z, rest=True, 
+				 ra=-999, dec=-999, MW_Ebv=0, AGN_Ebv=0):
 		"""
 		Get input data
 
 		Parameters:
 		-----------
 		lam: 1-D array
-			 Observed wavelength in unit of Angstrom
+			wavelength in unit of Angstrom
  
 		flux: 1-D array
-			 Observed flux density in unit of 10^{-17} erg/s/cm^2/Angstrom
+			flux density in unit of 10^{-17} erg/s/cm^2/Angstrom
 
 		eflux: 1-D array
 			 1 sigma err with the same unit of flux
  
 		z: float number
 			redshift
+			
+		rest: bool
+			indicates whether input data is in rest-frame
 
 		ra, dec: float number, optional 
-			the location of the source in degrees, right ascension and declination. 
+			the location of the source in degrees, right ascension and declination, used to determine MW_Ebv
+			
+		MW_Ebv, AGN_Ebv: float numbers, optional 
+			Galactic and host galaxy extinction, respectively
 
 		"""
 		self.name = name
@@ -89,22 +100,19 @@ class BADFit():
 		self.inputLam = np.asarray(lam, dtype=np.float64)
 		self.inputFlux = np.asarray(flux, dtype=np.float64)
 		self.inputFluxError = np.asarray(eflux, dtype=np.float64)
+		self.rest = rest
 		self.z = z
 		self.ra = ra
 		self.dec = dec
-		
-		if rest:
-			self.data = self.calcPower(lam, flux, eflux)
-		else:
-			self.data = self.calcPower(lam, flux, eflux)
-			
+		self.dataReset()
 		self.returnModel(self.modelChoice)
+		self.MW_Ebv = MW_Ebv
+		self.AGN_Ebv = AGN_Ebv
 
 		
-        
 
-	def runMCMC(self, nwalkers=124, niter=256, MW_Ebv=0, AGN_Ebv=0, 
-				fitThresholds=[3.E14, 1.91E15], 
+	def runMCMC(self, nwalkers=124, niter=256, 
+				fitWindow=[3.E14, 1.91E15], 
 				kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05):
 				
 		"""
@@ -121,7 +129,7 @@ class BADFit():
 		AGN_Ebv: float number
 			AGN host dust extinction
 
-		fitThresholds: 1D array, length 2 
+		fitWindow: 1D array, length 2 
 			Frequency minimum and maximum for fitting
 			
 		kde_bandwidth, errorFloor, errorFactor: float numbers
@@ -129,29 +137,9 @@ class BADFit():
 			
 			
 		"""
-
-		#########################
-		# Extinction Correction #
-		#########################
-		if self.ra > 0  and np.abs(self.dec) < 90:
-			sfd = SFDQuery()
-			coord = SkyCoord(self.ra, self.dec, frame='icrs', unit=(u.deg, u.deg))
-			MW_Ebv = sfd(coord) * 0.86 # SFD map with Schlegal 14% recalibration
-		self.data = self.extinctionCorrection(self.data, MW_Ebv, AGN_Ebv)
-
-		######################
-		# Fitting Thresholds #
-		######################
-		freq_low, freq_high = fitThresholds
-		self.data = self.fitThresholds(self.data, freq_low, freq_high)
-
-		##############
-		# Final Data #
-		##############
-
-		# Setup Data #
-		self.data = self.adjustUncertaintyKDE(self.data, kde_bandwidth, errorFloor, errorFactor)
-
+		self.dataReset()
+		self.mainDataRoutine(fitWindow, kde_bandwidth, errorFloor, errorFactor)
+		
 		##############
 		# MCMC Model #
 		##############
@@ -174,6 +162,32 @@ class BADFit():
 		self.createPlot(sampler.flatchain, sampler.flatlnprobability, self.data, self.z)	
 
 
+	def createPlotFromFile(self, fitWindow=[3.E14, 1.91E15], 
+						   kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05):
+		self.mainDataRoutine(fitWindow, kde_bandwidth, errorFloor, errorFactor)
+		chain_filename = 'output/'+self.name+'.h5'
+
+		with h5py.File(chain_filename, "r") as f:
+			samples = np.array(f['mcmc']['chain'])
+			likelihoods = np.array(f['mcmc']['log_prob'])
+			niter, nwalkers, _ = samples.shape
+			ndim = len(samples[0][0])
+			samples = np.ndarray.flatten(samples)
+			samples = samples.reshape(int(len(samples)/ndim), ndim)
+			samples = samples[:int(nwalkers*niter)]
+
+			c = ChainConsumer().add_chain(samples, parameters=self.par_labels)
+			summary = c.analysis.get_summary()
+			print(c.analysis.get_summary())
+			
+		self.createPlot(samples, likelihoods, self.data, self.z)
+
+	# -------------------------------------------------------------- #
+	
+
+	#############
+	# Functions #
+	#############
 
 	def sortYByX(self, x, y):
 		x, y = np.array(x), np.array(y)
@@ -233,6 +247,41 @@ class BADFit():
 		epower = epower[np.logical_and(freq > thresholdMin, freq < thresholdMax)]
 		freq = freq[np.logical_and(freq > thresholdMin, freq < thresholdMax)]
 		return [freq, power, epower]
+		
+	def dataReset(self):
+		if self.rest:
+			self.data = self.calcPower(self.inputLam, self.inputFlux, self.inputFluxError)
+		else:
+			self.data = self.calcPower(self.inputLam, self.inputFlux, self.inputFluxError)
+		return
+		
+	def mainDataRoutine(self, fitWindow=[3.E14, 1.91E15], 
+						kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05):
+		self.dataReset()
+		#########################
+		# Extinction Correction #
+		#########################
+		if self.ra > 0  and np.abs(self.dec) < 90:
+			sfd = SFDQuery()
+			coord = SkyCoord(self.ra, self.dec, frame='icrs', unit=(u.deg, u.deg))
+			self.MW_Ebv = sfd(coord) * 0.86 # SFD map with Schlegal 14% recalibration
+		self.data = self.extinctionCorrection(self.data, self.MW_Ebv, self.AGN_Ebv)
+
+		######################
+		# Fitting Thresholds #
+		######################
+		freq_low, freq_high = fitWindow
+		self.data = self.fitThresholds(self.data, freq_low, freq_high)
+
+		##############
+		# Final Data #
+		##############
+
+		# Setup Data #
+		self.data = self.adjustUncertaintyKDE(self.data, kde_bandwidth, errorFloor, errorFactor)
+		
+		return
+		
 
 	##################
 	# MCMC Functions #
@@ -243,8 +292,6 @@ class BADFit():
 		############
 		# Controls #
 		############
-
-		Model_Choice = "SLIMBH" # [KERRBB, SLIMBH]
 
 		## General ##
 		redshift = self.z
@@ -281,7 +328,7 @@ class BADFit():
 						{'fixed': False, 'limits':(-0.99, 0.99), 'label':'$a$', 'units':'$\\frac{J\,c}{GM^2}$'}, # a
 						{'fixed': False, 'limits':(0.4, 1), 'label':'cos$(\\theta_{\\rm{inc}})$', 'units':''}, # cos(i)
 						{'fixed': False, 'limits':(8, 11), 'label':'log(M$_{\\rm{BH}}$/M$_{\\odot}$)', 'units':''}, # Mbh
-						{'fixed': False, 'limits':(0, 250.), 'label':'$\\dot{\\rm{M}}$', 'units':'M$_{\\odot}$ yr$^{-1}$'}, # Mdd
+						{'fixed': False, 'limits':(0, 500.), 'label':'$\\dot{\\rm{M}}$', 'units':'M$_{\\odot}$ yr$^{-1}$'}, # Mdd
 						{'fixed': True, 'limits':(redshift, redshift), 'label':'$z$', 'units':''}, # redshift
 						{'fixed': True, 'limits':(0.5, 2.7), 'label':'fcol', 'units':''}, # fcol
 						{'fixed': True, 'limits':(0, 1), 'label':'rflag', 'units':''}, # rflag
@@ -344,7 +391,6 @@ class BADFit():
 		self.ndim = len(mcmc_params)
 		return setup
 			
-
 
 	def evalModel(self, bestfitp, freq):
 		if self.modelChoice == 'KERRBB':
@@ -641,23 +687,6 @@ class BADFit():
 		plt.savefig('output/'+self.name+'.png', dpi=200, bbox_inches='tight')
 		return ax
 
-	def createPlotFromFile(self, nwalkers, niter):
-		chain_filename = 'output/'+self.name+'.h5'
-
-		with h5py.File(chain_filename, "r") as f:
-			samples = np.array(f['mcmc']['chain'])
-			likelihoods = np.array(f['mcmc']['log_prob'])
-			
-			ndim = len(samples[0][0])
-			samples = np.ndarray.flatten(samples)
-			samples = samples.reshape(int(len(samples)/ndim), ndim)
-			samples = samples[:int(nwalkers*niter)]
-
-			c = ChainConsumer().add_chain(samples, parameters=self.par_labels)
-			summary = c.analysis.get_summary()
-			print(c.analysis.get_summary())
-			
-		self.createPlot(samples, likelihoods, self.data, self.z)
 
 
 
