@@ -113,7 +113,8 @@ class BADFit():
 
 	def runMCMC(self, nwalkers=124, niter=256, 
 				fitWindow=[3.E14, 1.91E15], 
-				kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05):
+				kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05,
+				priorMassFunction=False, priorMbh=-999, priorMbhSigma=0.5):
 				
 		"""
 		Run MCMC main routine to produce parameter posteriors
@@ -121,7 +122,7 @@ class BADFit():
 		Parameters:
 		-----------
 		nwalkers, niter: integers
-			 Number of walkers and iterations for emcee
+			Number of walkers and iterations for emcee
 
 		MW_Ebv: float number
 			 Milky Way Galactic extinction IF ra and dec not provided
@@ -135,8 +136,29 @@ class BADFit():
 		kde_bandwidth, errorFloor, errorFactor: float numbers
 			Modifying the error on datapoints based on proximity
 			
+		priorMassFunction: bool
+			Toggle to use mass function prior
+			
+		priorMbh, priorMbhSigma: float
+			Black hole mass prior and its standard deviation
 			
 		"""
+		self.priorMassFunction = priorMassFunction
+		self.priorMbh = priorMbh
+		self.priorMbhSigma = priorMbhSigma
+		
+		if self.priorMassFunction:
+			#######################
+			# Mass Function Prior #
+			#######################
+			prior_file = 'prior/mass_function.csv'
+			pdata = pd.read_csv(prior_file)
+			self.prior_mbh = pdata['Mbh'].to_numpy()
+			self.prior_lnlike = pdata['logLikelihood'].to_numpy()
+		
+		#####################
+		# Data Manipulation #
+		#####################
 		self.dataReset()
 		self.mainDataRoutine(fitWindow, kde_bandwidth, errorFloor, errorFactor)
 		
@@ -439,12 +461,20 @@ class BADFit():
 	
 	def paramPriors(self, bestfitp): #log
 		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
+		mbhIndex = 0
+		if self.modelChoice == 'KERRBB':
+			mbhIndex = 3
 		for index, par in enumerate(self.parinfo):
 			par_val = current_params[index]
 			current_limits = par['limits']
 			if par_val < current_limits[0] or par_val > current_limits[1]:
 				return -np.inf # if priors not satisfied
-		return 0.0 
+		lnprior = 0.0
+		if self.priorMassFunction:
+			lnprior = prior_lnlike[np.argmin(np.abs(prior_mbh-current_params[mbhIndex]))]
+		elif self.priorMbh > 0:
+			lnprior = -0.5*((current_params[mbhIndex] - self.priorMbh)/self.priorMbhSigma)**2 
+		return lnprior 
 	
 	def residual(self, bestfitp, data_freq, data_power, data_epower):
 		model_yy = self.evalModel(bestfitp, data_freq)
@@ -458,7 +488,7 @@ class BADFit():
 	
 	def likelihood(self, bestfitp, data_freq, data_power, data_epower):
 		prior_result = self.paramPriors(bestfitp)
-		if prior_result:
+		if prior_result == -np.inf:
 			return -np.inf
 		return prior_result+self.residual(bestfitp, data_freq, data_power, data_epower)
 	
