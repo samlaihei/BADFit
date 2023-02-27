@@ -649,7 +649,7 @@ def calcFlux(redshift, freq, power, epower):
 ########
 
 redshift = 4.692
-datafile = 'J2157_photometry_fixed.csv' 
+datafile = 'data/J2157_photometry_fixed.csv' 
 
 pdata = pd.read_csv(datafile)
 
