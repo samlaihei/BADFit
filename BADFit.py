@@ -31,6 +31,7 @@ from scipy.interpolate import UnivariateSpline
 from scipy.integrate import simps
 from sklearn.neighbors import KernelDensity
 from astropy.coordinates import SkyCoord
+import h5py
 
 # Spectra Modules
 from specutils import Spectrum1D
@@ -60,7 +61,7 @@ from dust_extinction.parameter_averages import G16
 
 class BADFit():
 
-	def __init__(self, name, modelChoice, lam, flux, eflux, z, ra=-999, dec=-999):
+	def __init__(self, name, modelChoice, lam, flux, eflux, z, rest=True, ra=-999, dec=-999):
 		"""
 		Get input data
 
@@ -91,8 +92,11 @@ class BADFit():
 		self.z = z
 		self.ra = ra
 		self.dec = dec
-		self.data = self.calcPower(lam, flux, eflux)
-
+		
+		if rest:
+			self.data = self.calcPower(lam, flux, eflux)
+		else:
+			self.data = self.calcPower(lam, flux, eflux)
 		
         
 
@@ -126,7 +130,7 @@ class BADFit():
 		#####################################
 		# Initialise model and its x-extent #
 		#####################################
-		self.parinfo, self.init_params, self.model = self.returnModel(self.modelChoice)
+		self.returnModel(self.modelChoice)
 
 		#########################
 		# Extinction Correction #
@@ -154,18 +158,6 @@ class BADFit():
 		# MCMC Model #
 		##############
 
-		# Get labels and init mcmc params #
-		mcmc_params = []
-		self.par_labels = []
-		self.par_units = []
-		for index, par in enumerate(self.parinfo):
-			if not par['fixed']:
-				mcmc_params.append(self.init_params[index])
-				self.par_labels.append(par['label'])
-				self.par_units.append(par['units'])
-	
-		ndim = len(mcmc_params)
-
 		# Random init walker position #
 		p0 = []
 		for i in range(nwalkers):
@@ -178,10 +170,10 @@ class BADFit():
 			p0.append(np.array(temp))
 
 		# Main mcmc routine #
-		sampler, pos, prob, state = self.mcmcMain(p0, nwalkers, niter, ndim, self.likelihood, self.data)
+		sampler, pos, prob, state = self.mcmcMain(p0, nwalkers, niter, self.ndim, self.likelihood, self.data)
 
 		# Main plotting routine
-		self.createPlot(sampler, self.data, self.z)	
+		self.createPlot(sampler.flatchain, sampler.flatlnprobability, self.data, self.z)	
 
 
 
@@ -334,9 +326,26 @@ class BADFit():
 
 
 		if Choice == 'KERRBB':
-			return kerrbb_setup
+			setup = kerrbb_setup
 		elif Choice == 'SLIMBH':
-			return slimbh_setup
+			setup = slimbh_setup
+			
+		# Get labels and init mcmc params #
+		self.parinfo = setup[0]
+		self.init_params = setup[1]
+		self.model = setup[2]
+		mcmc_params = []
+		self.par_labels = []
+		self.par_units = []
+		for index, par in enumerate(self.parinfo):
+			if not par['fixed']:
+				mcmc_params.append(self.init_params[index])
+				self.par_labels.append(par['label'])
+				self.par_units.append(par['units'])
+
+		self.ndim = len(mcmc_params)
+		return setup
+			
 
 
 	def evalModel(self, bestfitp, freq):
@@ -348,12 +357,12 @@ class BADFit():
 
 	def kerrbb_evalModel(self, bestfitp, freq): # in rest frame
 		ekeV = 10**11. * con.h * 6.242E15
-		current_params = self.deriveParams(parinfo, init_params, bestfitp)
+		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
 		current_params[2] = np.arccos(current_params[2])*180./np.pi # Convert cos(i) to deg
 		current_params[3] = 10**(current_params[3]) # Convert log10(Msun) to Msun
 		current_params[4] *= 1.989E33/(10**18)/(3.154E7) # Convert Msun/yr to 10^18 g/s
-		current_params[5] = cosmo.luminosity_distance(redshift).to(u.kpc).value # Convert redshift to dl in kpc
-		dl = self.cosmo.luminosity_distance(redshift).to(u.cm)
+		current_params[5] = self.cosmo.luminosity_distance(self.z).to(u.kpc).value # Convert redshift to dl in kpc
+		dl = self.cosmo.luminosity_distance(self.z).to(u.cm)
 		freq_kev = (con.h*6.242E15) * freq
 		freq_lo = freq_kev - ekeV
 		freq_hi = freq_kev + ekeV
@@ -598,15 +607,14 @@ class BADFit():
 		return fit_ax
 	
 
-	def createPlot(self, sampler, data, redshift):
+	def createPlot(self, samples, lnlikelihoods, data, redshift):
 		freq = np.linspace(0.7*np.min(data[0]), 1.2*np.max(data[0]), 1000)
 	
-		samples = sampler.flatchain
 		med_model, spread = self.sampleWalkers(100, samples, freq) # find median model
-		param_max  = samples[np.argmax(sampler.flatlnprobability)] # highest likelihood model
+		param_max  = samples[np.argmax(lnlikelihoods)] # highest likelihood model
 		new_bestfit = self.evalModel(param_max, freq)
 
-		print(np.nanmax(sampler.flatlnprobability))
+		print(np.nanmax(lnlikelihoods))
 		print(param_max)
 	
 		# Multi parameter plot #
@@ -635,7 +643,24 @@ class BADFit():
 		plt.savefig(self.name+'.png', dpi=200, bbox_inches='tight')
 		return ax
 
+	def createPlotFromFile(self, h5File, modelChoice, nwalkers, niter):
+		self.returnModel(modelChoice)
+		chain_filename = h5File
 
+		with h5py.File(chain_filename, "r") as f:
+			samples = np.array(f['mcmc']['chain'])
+			likelihoods = np.array(f['mcmc']['log_prob'])
+	
+			ndim = len(samples[0][0])
+			samples = np.ndarray.flatten(samples)
+			samples = samples.reshape(int(len(samples)/ndim), ndim)
+			samples = samples[:int(nwalkers*niter)]
+
+			c = ChainConsumer().add_chain(samples, parameters=self.par_labels)
+			summary = c.analysis.get_summary()
+			print(c.analysis.get_summary())
+			
+		self.createPlot(samples, likelihoods, self.data, self.z)
 
 
 
