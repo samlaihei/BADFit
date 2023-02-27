@@ -3,7 +3,7 @@
 # Email: samuel.lai (AT) anu (DOT) edu (DOT) au
 
 # Version 1.0
-# 2023-02-22
+# 2023-02-28
 
 ###################
 # Version History #
@@ -12,20 +12,13 @@
 # 	
 #
 #
-#
-#
-#
-#
-# ---------------------------------------------------------------
 
 #########
 # To Do #
 #########
 # Rest-frame, observed frame transform
-# New class for spectra data handling, fauxtometry, and corrected photometry
-#
-#
-#
+# New class for spectral data handling, fauxtometry, and corrected photometry
+# Cleanup
 #
 
 #######################################
@@ -62,7 +55,7 @@ from specutils import Spectrum1D
 from specutils.manipulation import median_smooth
 
 
-## Modules for pretty plots
+# Modules for plots
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 import seaborn as sns

@@ -14,10 +14,6 @@ def calcFlux(redshift, freq, power, epower):
 	eflux = np.array(epower)/(4 * np.pi * dl.value**2 * np.array(lam))
 	return [lam, flux, eflux]
 
-########
-# Data #
-########
-
 
 redshift = 4.692
 datafile = 'data/example.csv' 
