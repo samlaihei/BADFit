@@ -32,8 +32,8 @@ lams, flux, eflux = calcFlux(redshift, inputFreq, inputPower, inputPowerError)
 
 
 J2157 = BADFit.BADFit('example', 'SLIMBH', lams, flux, eflux, redshift, ra=329.36758, dec=-36.03752)
-J2157.createPlotFromFile()
-#J2157.runMCMC()
+#J2157.createPlotFromFile()
+J2157.runMCMC()
 
 
 
