@@ -97,6 +97,9 @@ class BADFit():
 
 		eflux: 1-D array
 			 1 sigma err with the same unit of flux
+			 
+		freq, power, epower: 1-D arrays
+			rest-frame in units of Hz and erg/s, overrides lam, flux, eflux
  
 		z: float number
 			redshift
@@ -120,11 +123,14 @@ class BADFit():
 		self.z = z
 		self.ra = ra
 		self.dec = dec
-		self.inputData = self.calcPower(lam, flux, eflux)
-		self.data = self.calcPower(lam, flux, eflux)
+
 		if len(freq) > 0 and all(len(x) == len(freq) for x in [power, epower]):
 			self.inputData = np.array([freq, power, epower])
 			self.data = np.array([freq, power, epower])
+		else:
+			self.inputData = self.calcPower(lam, flux, eflux)
+			self.data = self.calcPower(lam, flux, eflux)
+			
 		self.returnModel(self.modelChoice)
 		self.MW_Ebv = MW_Ebv
 		self.AGN_Ebv = AGN_Ebv
