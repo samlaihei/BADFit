@@ -2,41 +2,28 @@
 # Version History #
 ###################
 # V1 - Created, NOT cleaned, check (1+z) factors
+#	 - Use at your own risk
 
 ###################
 # Import Packages #
 ###################
 import numpy as np
 from scipy import interpolate
-#from scipy.optimize import curve_fit
 import pandas as pd
 import os
 import glob
 import scipy.constants as con
 from astropy.cosmology import FlatLambdaCDM
 from astropy import units as u
-#from kapteyn import kmpfit
 import csv
-#from time import time
 from uncertainties import ufloat
 from uncertainties.umath import *
 from scipy.interpolate import UnivariateSpline
 from scipy.integrate import simps
-from sklearn.neighbors import KernelDensity
 
 # Spectra Modules
-from astropy.io import fits
-from astropy.modeling import models, fitting
-from astropy.nddata import StdDevUncertainty
-from astropy.table import Table
 from specutils import Spectrum1D
-from specutils.analysis import gaussian_sigma_width, gaussian_fwhm, fwhm, fwzi
-from specutils.fitting import estimate_line_parameters, fit_lines
 from specutils.manipulation import (extract_region, box_smooth, gaussian_smooth, trapezoid_smooth, median_smooth)
-from specutils.manipulation import FluxConservingResampler, LinearInterpolatedResampler, SplineInterpolatedResampler
-from specutils.spectra import SpectralRegion
-
-
 
 
 ## Modules for dust extintction 
@@ -194,7 +181,7 @@ def AGN_extinction(RvA, fA, Av, lams, flux, eflux): # lams input in rest frame
 	return [lams, flux, eflux]
 	
 def GC10_MEC_extinction(Av, lams, flux, eflux): # lams input in rest frame
-    ext_file = '/Users/samlaihei/Desktop/ANU_PHD/J2157_Fitting/extinction/G10_MEC.csv'
+    ext_file = 'G10_MEC.csv'
     pdata = pd.read_csv(ext_file)
     wavs = pdata['Wavelength'].to_numpy() # in angstrom
     ext = pdata['Extinction'].to_numpy()
