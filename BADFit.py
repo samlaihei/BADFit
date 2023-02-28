@@ -82,7 +82,7 @@ class BADFit():
 	# Main Routines #
 	#################
 	
-	def __init__(self, name, modelChoice, lam, flux, eflux, z, rest=True, 
+	def __init__(self, name, modelChoice, lam, flux, eflux, z, 
 				 ra=-999, dec=-999, MW_Ebv=0, AGN_Ebv=0):
 		"""
 		Get input data
@@ -90,10 +90,10 @@ class BADFit():
 		Parameters:
 		-----------
 		lam: 1-D array
-			wavelength in unit of Angstrom
+			wavelength in unit of Angstrom in rest-frame
  
 		flux: 1-D array
-			flux density in unit of 10^{-17} erg/s/cm^2/Angstrom
+			flux density in unit of erg/s/cm^2/Angstrom in rest-frame
 
 		eflux: 1-D array
 			 1 sigma err with the same unit of flux
@@ -117,7 +117,6 @@ class BADFit():
 		self.inputLam = np.asarray(lam, dtype=np.float64)
 		self.inputFlux = np.asarray(flux, dtype=np.float64)
 		self.inputFluxError = np.asarray(eflux, dtype=np.float64)
-		self.rest = rest
 		self.z = z
 		self.ra = ra
 		self.dec = dec
@@ -240,8 +239,8 @@ class BADFit():
 	def calcPower(self, lam, flux, eflux):
 		dl = self.cosmo.luminosity_distance(self.z).to(u.cm)
 		freq = con.c/lam*10**10
-		power = np.array(flux) * 4 * np.pi * dl.value**2 * np.array(lam)
-		epower = np.array(eflux) * 4 * np.pi * dl.value**2 * np.array(lam)
+		power = np.array(flux) * 4 * np.pi * dl.value**2 * np.array(freq)/(1+self.z)
+		epower = np.array(eflux) * 4 * np.pi * dl.value**2 * np.array(freq)/(1+self.z)
 		_, power = self.sortYByX(freq, power)
 		freq, epower = self.sortYByX(freq, epower)
 		return [freq, power, epower]
@@ -249,8 +248,8 @@ class BADFit():
 	def calcFlux(self, freq, power, epower):
 		dl = self.cosmo.luminosity_distance(self.z).to(u.cm)
 		lam = con.c/(freq)*10**10
-		flux = np.array(power)/(4 * np.pi * dl.value**2 * np.array(lam))
-		eflux = np.array(epower)/(4 * np.pi * dl.value**2 * np.array(lam))
+		flux = np.array(power)/(4 * np.pi * dl.value**2 * np.array(freq)/(1+self.z))
+		eflux = np.array(epower)/(4 * np.pi * dl.value**2 * np.array(freq)/(1+self.z))
 		_, flux = self.sortYByX(lam, flux)
 		lam, eflux = self.sortYByX(lam, eflux)
 		return [lam, flux, eflux]
@@ -291,10 +290,7 @@ class BADFit():
 		return [freq, power, epower]
 		
 	def dataReset(self):
-		if self.rest:
-			self.data = self.calcPower(self.inputLam, self.inputFlux, self.inputFluxError)
-		else:
-			self.data = self.calcPower(self.inputLam, self.inputFlux, self.inputFluxError)
+		self.data = self.calcPower(self.inputLam, self.inputFlux, self.inputFluxError)
 		return
 		
 	def mainDataRoutine(self, fitWindow=[3.E14, 1.91E15], 
@@ -702,7 +698,7 @@ class BADFit():
 	
 
 	def createPlot(self, samples, lnlikelihoods, data, redshift):
-		freq = np.linspace(0.7*np.min(data[0]), 1.2*np.max(data[0]), 1000)
+		freq = np.linspace(0.2*np.min(data[0]), 1.2*np.max(data[0]), 1000)
 	
 		med_model, spread = self.sampleWalkers(100, samples, freq) # find median model
 		param_max  = samples[np.argmax(lnlikelihoods)] # highest likelihood model
@@ -734,7 +730,7 @@ class BADFit():
 
 		ax.tick_params(axis='both', which='both', direction='in', labelbottom=False, labelleft=False, top=True, right=True, labeltop=True, labelright=True)
 		ax.tick_params(axis='both', which='minor', labelright=False, labeltop=False)
-		plt.savefig('output/'+self.name+'.png', dpi=200, bbox_inches='tight')
+		plt.savefig('output/'+self.name+'.png', dpi=200)
 		return ax
 
 
