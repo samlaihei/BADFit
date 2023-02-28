@@ -93,7 +93,7 @@ class BADFit():
 			wavelength in unit of Angstrom in rest-frame
  
 		flux: 1-D array
-			flux density in unit of erg/s/cm^2/Angstrom in rest-frame
+			flux density in unit of erg/s/cm^2/Hz
 
 		eflux: 1-D array
 			 1 sigma err with the same unit of flux
@@ -103,9 +103,6 @@ class BADFit():
  
 		z: float number
 			redshift
-			
-		rest: bool
-			indicates whether input data is in rest-frame
 
 		ra, dec: float number, optional 
 			the location of the source in degrees, right ascension and declination, used to determine MW_Ebv
