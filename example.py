@@ -7,8 +7,8 @@ datafile = 'data/example.csv'
 
 pdata = pd.read_csv(datafile)
 
-lams = pdata['Wavelength'].to_numpy() # angstrom
-flux = pdata['FluxDensity'].to_numpy() # erg/s/cm2/Hz
+lams = pdata['Wavelength'].to_numpy() # rest-frame wavelength in angstrom 
+flux = pdata['FluxDensity'].to_numpy() # flux density in erg/s/cm2/Hz
 eflux = pdata['eFluxDensity'].to_numpy()
 
 
