@@ -83,6 +83,7 @@ class BADFit():
 	#################
 	
 	def __init__(self, name, modelChoice, lam, flux, eflux, z, 
+				 freq=[], power=[], epower=[],
 				 ra=-999, dec=-999, MW_Ebv=0, AGN_Ebv=0):
 		"""
 		Get input data
@@ -122,13 +123,16 @@ class BADFit():
 		self.dec = dec
 		self.inputData = self.calcPower(lam, flux, eflux)
 		self.data = self.calcPower(lam, flux, eflux)
+		if len(freq) > 0 and len(freq) == len(power) and len(power) == len(epower):
+			self.inputData = np.array([freq, power, epower])
+			self.data = np.array([freq, power, epower])
 		self.returnModel(self.modelChoice)
 		self.MW_Ebv = MW_Ebv
 		self.AGN_Ebv = AGN_Ebv
 
 		
 
-	def runMCMC(self, nwalkers=124, niter=256, 
+	def runMCMC(self, nwalkers=124, niter=256, forceData=False,
 				fitWindow=[3.E14, 1.91E15], 
 				kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05,
 				priorMassFunction=False, priorMbh=-999, priorMbhSigma=0.5):
@@ -140,6 +144,9 @@ class BADFit():
 		-----------
 		nwalkers, niter: integers
 			Number of walkers and iterations for emcee
+			
+		forceData: bool
+			Use data as is, without extinction or other manipulation
 
 		MW_Ebv: float number
 			 Milky Way Galactic extinction IF ra and dec not provided
@@ -176,8 +183,12 @@ class BADFit():
 		#####################
 		# Data Manipulation #
 		#####################
-		self.data = self.mainDataRoutine(self.inputData, fitWindow, kde_bandwidth, errorFloor, errorFactor)
-		
+		if forceData:
+			self.data = self.inputData
+			self.data = self.adjustUncertaintyKDE(self.data, kde_bandwidth, errorFloor, errorFactor)
+		else:
+			self.data = self.mainDataRoutine(self.inputData, fitWindow, kde_bandwidth, errorFloor, errorFactor)
+
 		##############
 		# MCMC Model #
 		##############
@@ -200,9 +211,13 @@ class BADFit():
 		self.createPlot(sampler.flatchain, sampler.flatlnprobability, self.data, self.z)	
 
 
-	def createPlotFromFile(self, fitWindow=[3.E14, 1.91E15], 
+	def createPlotFromFile(self, forceData=False, fitWindow=[3.E14, 1.91E15], 
 						   kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05):
-		self.data = self.mainDataRoutine(self.inputData, fitWindow, kde_bandwidth, errorFloor, errorFactor)
+		if forceData:
+			self.data = self.inputData
+		else:
+			self.data = self.mainDataRoutine(self.inputData, fitWindow, kde_bandwidth, errorFloor, errorFactor)
+
 		chain_filename = 'output/'+self.name+'.h5'
 
 		with h5py.File(chain_filename, "r") as f:
