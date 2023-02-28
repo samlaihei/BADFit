@@ -1,7 +1,7 @@
 ###################
 # Version History #
 ###################
-# V1 - Created
+# V1 - Created, NOT cleaned, check (1+z) factors
 
 ###################
 # Import Packages #
@@ -72,15 +72,15 @@ def sort_ybyx(x, y):
 def calc_power(redshift, lam, flux, eflux):
 	dl = cosmo.luminosity_distance(redshift).to(u.cm)
 	freq = con.c/lam*10**10
-	power = np.array(flux) * 4 * np.pi * dl.value**2 * np.array(lam)
-	epower = np.array(eflux) * 4 * np.pi * dl.value**2 * np.array(lam)
+	power = np.array(flux) * 4 * np.pi * dl.value**2 * np.array(lam)*(1+redshift)
+	epower = np.array(eflux) * 4 * np.pi * dl.value**2 * np.array(lam)*(1+redshift)
 	return [freq, power, epower]
 	
 def calc_flux(redshift, freq, power, epower):
 	dl = cosmo.luminosity_distance(redshift).to(u.cm)
 	lam = con.c/(freq)*10**10
-	flux = np.array(power)/(4 * np.pi * dl.value**2 * np.array(lam))
-	eflux = np.array(epower)/(4 * np.pi * dl.value**2 * np.array(lam))
+	flux = np.array(power)/(4 * np.pi * dl.value**2 * np.array(lam)*(1+redshift))
+	eflux = np.array(epower)/(4 * np.pi * dl.value**2 * np.array(lam)*(1+redshift))
 	return [lam, flux, eflux]
 	
 
@@ -252,6 +252,7 @@ SPEC_freq, SPEC_power, SPEC_epower = calc_power(redshift, SPEC_1Dsmooth.spectral
 SPEC_freq_OG = np.copy(SPEC_freq)
 SPEC_lam_OG = np.copy(SPEC_lam)
 
+
 #########################
 # Extinction Correction #
 #########################
@@ -378,7 +379,7 @@ for temp_lam, temp_pow in zip(mod_PHOT_lam, mod_PHOT_power):
 	I1        = simps(spec_interp*filt*lamF,lamF)                     
 	I2        = simps( filt/lamF,lamF)
 	fnu       = I1/I2 / (con.c*10**10)
-	lum = fnu * 4 * np.pi * dl.value**2 * freq
+	lum = fnu * 4 * np.pi * dl.value**2 * freq * (1+redshift) # <-- What
 
 	temp_specS = (specS*temp_pow/lum)[np.logical_and(lamS > np.min(lamF), lamS < np.max(lamF))]
 	temp_especS = (e_specS*temp_pow/lum)[np.logical_and(lamS > np.min(lamF), lamS < np.max(lamF))]

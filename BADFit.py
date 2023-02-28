@@ -16,9 +16,8 @@
 #########
 # To Do #
 #########
-# Rest-frame, observed frame transform
-# New class for spectral data handling, fauxtometry, and corrected photometry
-# Cleanup
+# 
+#
 #
 
 #######################################
@@ -123,7 +122,7 @@ class BADFit():
 		self.dec = dec
 		self.inputData = self.calcPower(lam, flux, eflux)
 		self.data = self.calcPower(lam, flux, eflux)
-		if len(freq) > 0 and len(freq) == len(power) and len(power) == len(epower):
+		if len(freq) > 0 and all(len(x) == len(freq) for x in [power, epower]):
 			self.inputData = np.array([freq, power, epower])
 			self.data = np.array([freq, power, epower])
 		self.returnModel(self.modelChoice)
