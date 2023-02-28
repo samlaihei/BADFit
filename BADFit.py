@@ -120,7 +120,8 @@ class BADFit():
 		self.z = z
 		self.ra = ra
 		self.dec = dec
-		self.dataReset()
+		self.inputData = self.calcPower(lam, flux, eflux)
+		self.data = self.calcPower(lam, flux, eflux)
 		self.returnModel(self.modelChoice)
 		self.MW_Ebv = MW_Ebv
 		self.AGN_Ebv = AGN_Ebv
@@ -175,8 +176,7 @@ class BADFit():
 		#####################
 		# Data Manipulation #
 		#####################
-		self.dataReset()
-		self.mainDataRoutine(fitWindow, kde_bandwidth, errorFloor, errorFactor)
+		self.data = self.mainDataRoutine(self.inputData, fitWindow, kde_bandwidth, errorFloor, errorFactor)
 		
 		##############
 		# MCMC Model #
@@ -202,7 +202,7 @@ class BADFit():
 
 	def createPlotFromFile(self, fitWindow=[3.E14, 1.91E15], 
 						   kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05):
-		self.mainDataRoutine(fitWindow, kde_bandwidth, errorFloor, errorFactor)
+		self.data = self.mainDataRoutine(self.inputData, fitWindow, kde_bandwidth, errorFloor, errorFactor)
 		chain_filename = 'output/'+self.name+'.h5'
 
 		with h5py.File(chain_filename, "r") as f:
@@ -289,13 +289,9 @@ class BADFit():
 		freq = freq[np.logical_and(freq > thresholdMin, freq < thresholdMax)]
 		return [freq, power, epower]
 		
-	def dataReset(self):
-		self.data = self.calcPower(self.inputLam, self.inputFlux, self.inputFluxError)
-		return
 		
-	def mainDataRoutine(self, fitWindow=[3.E14, 1.91E15], 
+	def mainDataRoutine(self, data, fitWindow=[3.E14, 1.91E15], 
 						kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05):
-		self.dataReset()
 		#########################
 		# Extinction Correction #
 		#########################
@@ -303,22 +299,22 @@ class BADFit():
 			sfd = SFDQuery()
 			coord = SkyCoord(self.ra, self.dec, frame='icrs', unit=(u.deg, u.deg))
 			self.MW_Ebv = sfd(coord) * 0.86 # SFD map with Schlegal 14% recalibration
-		self.data = self.extinctionCorrection(self.data, self.MW_Ebv, self.AGN_Ebv)
+		data = self.extinctionCorrection(data, self.MW_Ebv, self.AGN_Ebv)
 
 		######################
 		# Fitting Thresholds #
 		######################
 		freq_low, freq_high = fitWindow
-		self.data = self.fitThresholds(self.data, freq_low, freq_high)
+		data = self.fitThresholds(data, freq_low, freq_high)
 
 		##############
 		# Final Data #
 		##############
 
 		# Setup Data #
-		self.data = self.adjustUncertaintyKDE(self.data, kde_bandwidth, errorFloor, errorFactor)
+		data = self.adjustUncertaintyKDE(data, kde_bandwidth, errorFloor, errorFactor)
 		
-		return
+		return data
 		
 
 	##################
@@ -733,10 +729,27 @@ class BADFit():
 		plt.savefig('output/'+self.name+'.png', dpi=200)
 		return ax
 
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
