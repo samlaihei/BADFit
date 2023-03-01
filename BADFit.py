@@ -1,5 +1,5 @@
 # BADFit: Code for fitting black hole accretion disks with Sherpa/XSpec
-# Auther: Samuel Lai, ANU
+# Author: Samuel Lai, ANU
 # Email: samuel.lai (AT) anu (DOT) edu (DOT) au
 
 # Version 1.0
