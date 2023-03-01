@@ -8,7 +8,7 @@
 ###################
 # Version History #
 ###################
-# V1.0 - Forked from AD_Fitting_v1, more user friendly
+# V1.0 - Forked from AD_Fitting_v1, basic functionality established
 # 	
 #
 #
