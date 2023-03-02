@@ -348,16 +348,18 @@ mod_PHOT_power = PHOT_power[np.logical_or(PHOT_lam < np.nanmin(SPEC_lam_OG), PHO
 mod_PHOT_lam = PHOT_lam[np.logical_or(PHOT_lam < np.nanmin(SPEC_lam_OG), PHOT_lam > np.nanmax(SPEC_lam_OG))]
 for filter_file in filter_files:
 	lamF,filt = np.loadtxt(filter_file, unpack=True)
-	lamF = lamF/(1+redshift)
 	filter_avglam.append(np.average(lamF, weights=filt))
 filter_avglam = np.array(filter_avglam)
 
+# temporarily put into obs frame to match the filter
+mod_PHOT_lam *= (1+redshift)
+lamS *= (1+redshift)
 
 CORR_freq, CORR_power, CORR_epower = np.array([]), np.array([]), np.array([])
 for temp_lam, temp_pow in zip(mod_PHOT_lam, mod_PHOT_power):
 	filt_file = filter_files[np.argmin(np.abs(filter_avglam-temp_lam))]
 	lamF,filt = np.loadtxt(filt_file, unpack=True)
-	lamF = lamF/(1+redshift)
+	lamF = lamF
 
 	dl = cosmo.luminosity_distance(redshift).to(u.cm)
 	wav = np.average(lamF, weights=filt)
@@ -366,11 +368,11 @@ for temp_lam, temp_pow in zip(mod_PHOT_lam, mod_PHOT_power):
 	I1        = simps(spec_interp*filt*lamF,lamF)                     
 	I2        = simps( filt/lamF,lamF)
 	fnu       = I1/I2 / (con.c*10**10)
-	lum = fnu * 4 * np.pi * dl.value**2 * freq * (1+redshift) # <-- What
+	lum = fnu * 4 * np.pi * dl.value**2 * freq
 
 	temp_specS = (specS*temp_pow/lum)[np.logical_and(lamS > np.min(lamF), lamS < np.max(lamF))]
 	temp_especS = (e_specS*temp_pow/lum)[np.logical_and(lamS > np.min(lamF), lamS < np.max(lamF))]
-	temp_lamS = lamS[np.logical_and(lamS > np.min(lamF), lamS < np.max(lamF))]
+	temp_lamS = lamS[np.logical_and(lamS > np.min(lamF), lamS < np.max(lamF))]/(1+redshift) # back to rest
 	temp_freqS, temp_powS, temp_epowS = calc_power(redshift, temp_lamS, temp_specS, temp_especS)
 
 	all_masks = [Fe_masks, Emission_masks] # same masks defined for fauxtometry
