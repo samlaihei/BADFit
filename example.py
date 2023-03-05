@@ -23,8 +23,8 @@ if False:
 else:
 	freq, power, epower = [], [], []
 
-#J2157 = BADFit.BADFit('example', 'SLIMBH', lams, flux, eflux, redshift, freq=freq, power=power, epower=epower, ra=329.36758, dec=-36.03752)
-J2157 = BADFit.BADFit('example', 'SLIMBH', lams, flux, eflux, redshift, ra=329.36758, dec=-36.03752)
+#J2157 = BADFit.BADFit('example', 'KERRBB', lams, flux, eflux, redshift, freq=freq, power=power, epower=epower, ra=329.36758, dec=-36.03752)
+J2157 = BADFit.BADFit('example', 'SLIMBH', lams, flux, eflux, redshift)
 #J2157.createPlotFromFile()
 J2157.runMCMC()
 
