@@ -233,9 +233,10 @@ class BADFit():
 
 			c = ChainConsumer().add_chain(samples, parameters=self.par_labels)
 			summary = c.analysis.get_summary()
-			print(c.analysis.get_summary())
-			
+			#print(c.analysis.get_summary())
+		
 		self.createPlot(samples, likelihoods, self.data, self.z)
+		return summary['log(M$_{\\rm{BH}}$/M$_{\\odot}$)']
 
 
 
@@ -609,6 +610,15 @@ class BADFit():
 	############
 	def makeCornerPlot(self, flattened_mcmc_chain, labels, units):
 		num_params = len(flattened_mcmc_chain[0])
+		
+		argMbh = labels.index('log(M$_{\\rm{BH}}$/M$_{\\odot}$)')
+		if argMbh != 0:
+			labels[0], labels[argMbh] = labels[argMbh], labels[0]
+			units[0], units[argMbh] = units[argMbh], units[0]
+			trans_chain = [np.copy(i) for i in np.transpose(flattened_mcmc_chain)]
+			trans_chain[0], trans_chain[argMbh] = trans_chain[argMbh], trans_chain[0]
+			flattened_mcmc_chain = np.transpose(trans_chain)
+
 		temp_labels_listx = np.copy(labels)
 		temp_labels_listy = np.copy(labels)
 		fig = plt.figure(figsize=(num_params*2, num_params*2))

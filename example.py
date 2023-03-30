@@ -17,15 +17,15 @@ if False:
 
 	pdata = pd.read_csv(datafile)
 
-	freq = pdata['Freq'].to_numpy() # rest-frame wavelength in angstrom 
-	power = pdata['Power'].to_numpy() # flux density in erg/s/cm2/Hz
+	freq = pdata['Freq'].to_numpy() # rest-frame frequency in Hz 
+	power = pdata['Power'].to_numpy() # Power in erg/s
 	epower = pdata['ePower'].to_numpy()
 else:
 	freq, power, epower = [], [], []
 
 #J2157 = BADFit.BADFit('example', 'KERRBB', lams, flux, eflux, redshift, freq=freq, power=power, epower=epower, ra=329.36758, dec=-36.03752)
 J2157 = BADFit.BADFit('example', 'SLIMBH', lams, flux, eflux, redshift)
-#J2157.createPlotFromFile()
+#print(J2157.createPlotFromFile())
 J2157.runMCMC()
 
 

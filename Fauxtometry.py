@@ -368,7 +368,7 @@ for temp_lam, temp_pow in zip(mod_PHOT_lam, mod_PHOT_power):
 	I1        = simps(spec_interp*filt*lamF,lamF)                     
 	I2        = simps( filt/lamF,lamF)
 	fnu       = I1/I2 / (con.c*10**10)
-	lum = fnu * 4 * np.pi * dl.value**2 * freq
+	lum = fnu * 4 * np.pi * dl.value**2 * freq 
 
 	temp_specS = (specS*temp_pow/lum)[np.logical_and(lamS > np.min(lamF), lamS < np.max(lamF))]
 	temp_especS = (e_specS*temp_pow/lum)[np.logical_and(lamS > np.min(lamF), lamS < np.max(lamF))]
