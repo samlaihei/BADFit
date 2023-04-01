@@ -210,7 +210,7 @@ class BADFit():
 		sampler, pos, prob, state = self.mcmcMain(p0, nwalkers, niter, self.ndim, self.likelihood, self.data)
 
 		# Main plotting routine
-		self.createPlot(sampler.flatchain, sampler.flatlnprobability, self.data, self.z)	
+		return (self.createPlot(sampler.flatchain, sampler.flatlnprobability, self.data, self.z))	
 
 
 	def createPlotFromFile(self, forceData=False, fitWindow=[3.E14, 1.91E15], 
@@ -233,8 +233,8 @@ class BADFit():
 
 			c = ChainConsumer().add_chain(samples, parameters=self.par_labels)
 			summary = c.analysis.get_summary()
-			#print(c.analysis.get_summary())
-			
+			print(c.analysis.get_summary())
+
 			if 'log(M$_{\\rm{BH}}$/M$_{\\odot}$)' in list(summary.keys()):
 				current_lo, current_med, current_hi = summary['log(M$_{\\rm{BH}}$/M$_{\\odot}$)']    
 				if current_lo == None:
@@ -243,9 +243,10 @@ class BADFit():
 					current_lo = np.quantile(np.transpose(samples)[ind], 0.16) # 16th percentile
 					current_hi = np.quantile(np.transpose(samples)[ind], 0.84) # 84th percentile
 		
-		
-		self.createPlot(samples, likelihoods, self.data, self.z)
-		return summary['log(M$_{\\rm{BH}}$/M$_{\\odot}$)']
+		# Return max likelihood
+		#return [current_lo, current_med, current_hi]
+			
+		return (self.createPlot(samples, likelihoods, self.data, self.z))
 
 
 
@@ -381,7 +382,7 @@ class BADFit():
 		# dl - luminosity distance in kpc
 		# fcol - spectral hardening factor Tcol/Teff, 1 for Campitiello
 		# rflag - switch for self-irradiation, keep on at 1
-		# lflag - switch for limb darkening, keep off at 0
+		# lflag - switch for limb darkening, keep on at10
 		# norm - normalisation
 
 		# Changed to 10^9 Mbh, dl to z, mdot to Msun/yr
@@ -405,12 +406,12 @@ class BADFit():
 		#######################
 		# Mbh - black hole mass in Msuns
 		# a - black hole spin (0 < a < 1)
-		# lumin - disk luminosity in Eddington units, (0.05 < lumin < 1.0)
+		# lumin - disk luminosity in Eddington units, (0.05 < lumin < 1.2)
 		# alpha - alpha viscosity
 		# i - inclination in deg (0 <= i < 85), 0 for face-on
 		# dl - luminosity distance in kpc
 		# fcol - spectral hardening factor Tcol/Teff, 1 for Campitiello
-		# lflag - switch for limb darkening, keep off at 0
+		# lflag - switch for limb darkening, keep on at 1
 		# vflag - switch for height profile, keep on at 1
 		# norm - normalisation
 
@@ -421,7 +422,7 @@ class BADFit():
 						{'fixed': True, 'limits':(0.005, 0.1), 'label':'$\alpha$', 'units':''}, # alpha
 						{'fixed': False, 'limits':(0.4, 1), 'label':'cos$(\\theta_{\\rm{inc}})$', 'units':''}, # cos(i)
 						{'fixed': True, 'limits':(redshift, redshift), 'label':'$z$', 'units':''}, # redshift
-						{'fixed': True, 'limits':(1, 2.7), 'label':'fcol', 'units':''}, # fcol
+						{'fixed': True, 'limits':(-1, 2.7), 'label':'fcol', 'units':''}, # fcol
 						{'fixed': True, 'limits':(0, 1), 'label':'lflag', 'units':''}, # lflag
 						{'fixed': True, 'limits':(0, 1), 'label':'vflag', 'units':''}, # vflag
 						{'fixed': True, 'limits':(0, 1), 'label':'norm', 'units':''}] # norm
@@ -500,7 +501,7 @@ class BADFit():
 	
 	def paramPriors(self, bestfitp): #log
 		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
-		mbhIndex = 0
+		mbhIndex = 0 #MODIFY THIS
 		if self.modelChoice == 'KERRBB':
 			mbhIndex = 3
 		for index, par in enumerate(self.parinfo):
@@ -634,6 +635,7 @@ class BADFit():
 		fig = plt.figure(figsize=(num_params*2, num_params*2))
 		plt.subplots_adjust(wspace= 0.05, hspace= 0.05)
 
+		
 		hist_axs = []
 		density_axs = []
 		fit_plot = []
@@ -667,7 +669,7 @@ class BADFit():
 			current_med = cc_summary[labels[ind]][1]
 			current_lo = cc_summary[labels[ind]][0]
 			current_hi = cc_summary[labels[ind]][2]
-			if current_lo == None or False:
+			if current_lo == None:
 				current_med = np.median(current_dist) # Median
 				current_lo = np.quantile(current_dist, 0.16) # 16th percentile
 				current_hi = np.quantile(current_dist, 0.84) # 84th percentile
@@ -731,7 +733,7 @@ class BADFit():
 	
 
 	def createPlot(self, samples, lnlikelihoods, data, redshift):
-		freq = np.linspace(0.2*np.min(data[0]), 1.2*np.max(data[0]), 1000)
+		freq = np.linspace(0.8*np.min(data[0]), 2.0*np.max(data[0]), 1000)
 	
 		med_model, spread = self.sampleWalkers(100, samples, freq) # find median model
 		param_max  = samples[np.argmax(lnlikelihoods)] # highest likelihood model
@@ -753,6 +755,7 @@ class BADFit():
 		ax.set_xlabel('Rest Frequency [Hz]', loc='right')
 		ax.set_ylabel('$\\nu L_{\\nu}$ [erg/s]', loc='top')
 	
+		ax.set_ylim([ax.get_ylim()[0], 1.5*ax.get_ylim()[1]])
 	
 		ax.set_xscale('log')
 		ax.set_yscale('log')
