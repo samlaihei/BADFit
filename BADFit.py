@@ -234,6 +234,15 @@ class BADFit():
 			c = ChainConsumer().add_chain(samples, parameters=self.par_labels)
 			summary = c.analysis.get_summary()
 			#print(c.analysis.get_summary())
+			
+			if 'log(M$_{\\rm{BH}}$/M$_{\\odot}$)' in list(summary.keys()):
+				current_lo, current_med, current_hi = summary['log(M$_{\\rm{BH}}$/M$_{\\odot}$)']    
+				if current_lo == None:
+					ind = list(summary.keys()).index('log(M$_{\\rm{BH}}$/M$_{\\odot}$)')
+					current_med = np.median(np.transpose(samples)[ind]) # Median
+					current_lo = np.quantile(np.transpose(samples)[ind], 0.16) # 16th percentile
+					current_hi = np.quantile(np.transpose(samples)[ind], 0.84) # 84th percentile
+		
 		
 		self.createPlot(samples, likelihoods, self.data, self.z)
 		return summary['log(M$_{\\rm{BH}}$/M$_{\\odot}$)']
@@ -611,13 +620,14 @@ class BADFit():
 	def makeCornerPlot(self, flattened_mcmc_chain, labels, units):
 		num_params = len(flattened_mcmc_chain[0])
 		
-		argMbh = labels.index('log(M$_{\\rm{BH}}$/M$_{\\odot}$)')
-		if argMbh != 0:
-			labels[0], labels[argMbh] = labels[argMbh], labels[0]
-			units[0], units[argMbh] = units[argMbh], units[0]
-			trans_chain = [np.copy(i) for i in np.transpose(flattened_mcmc_chain)]
-			trans_chain[0], trans_chain[argMbh] = trans_chain[argMbh], trans_chain[0]
-			flattened_mcmc_chain = np.transpose(trans_chain)
+		if 'log(M$_{\\rm{BH}}$/M$_{\\odot}$)' in labels:
+			argMbh = labels.index('log(M$_{\\rm{BH}}$/M$_{\\odot}$)')
+			if argMbh != 0:
+				labels[0], labels[argMbh] = labels[argMbh], labels[0]
+				units[0], units[argMbh] = units[argMbh], units[0]
+				trans_chain = [np.copy(i) for i in np.transpose(flattened_mcmc_chain)]
+				trans_chain[0], trans_chain[argMbh] = trans_chain[argMbh], trans_chain[0]
+				flattened_mcmc_chain = np.transpose(trans_chain)
 
 		temp_labels_listx = np.copy(labels)
 		temp_labels_listy = np.copy(labels)
@@ -747,7 +757,7 @@ class BADFit():
 		ax.set_xscale('log')
 		ax.set_yscale('log')
 
-		ax.text(x=0.05, y=0.95, s='z = ' + str(self.z), transform=ax.transAxes, fontsize=10, 
+		ax.text(x=0.05, y=0.95, s='z = %.3f\n%.3f' %(self.z, np.nanmax(lnlikelihoods)), transform=ax.transAxes, fontsize=10, 
 				verticalalignment='top', horizontalalignment='left',
 				bbox=dict(facecolor='white', edgecolor='none'))
 
