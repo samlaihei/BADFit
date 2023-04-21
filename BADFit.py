@@ -390,7 +390,7 @@ class BADFit():
 						{'fixed': False, 'limits':(-0.99, 0.99), 'label':'$a$', 'units':'$\\frac{J\,c}{GM^2}$'}, # a
 						{'fixed': False, 'limits':(0.4, 1), 'label':'cos$(\\theta_{\\rm{inc}})$', 'units':''}, # cos(i)
 						{'fixed': False, 'limits':(8, 11), 'label':'log(M$_{\\rm{BH}}$/M$_{\\odot}$)', 'units':''}, # Mbh
-						{'fixed': False, 'limits':(0, 500.), 'label':'$\\dot{\\rm{M}}$', 'units':'M$_{\\odot}$ yr$^{-1}$'}, # Mdd
+						{'fixed': False, 'limits':(-3, 3), 'label':'$\\dot{\\rm{M}}$', 'units':'M$_{\\odot}$ yr$^{-1}$'}, # Mdd
 						{'fixed': True, 'limits':(redshift, redshift), 'label':'$z$', 'units':''}, # redshift
 						{'fixed': True, 'limits':(0.5, 2.7), 'label':'fcol', 'units':''}, # fcol
 						{'fixed': True, 'limits':(0, 1), 'label':'rflag', 'units':''}, # rflag
@@ -466,6 +466,7 @@ class BADFit():
 		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
 		current_params[2] = np.arccos(current_params[2])*180./np.pi # Convert cos(i) to deg
 		current_params[3] = 10**(current_params[3]) # Convert log10(Msun) to Msun
+		current_params[4] = 10**current_params[4]
 		current_params[4] *= 1.989E33/(10**18)/(3.154E7) # Convert Msun/yr to 10^18 g/s
 		current_params[5] = self.cosmo.luminosity_distance(self.z).to(u.kpc).value # Convert redshift to dl in kpc
 		dl = self.cosmo.luminosity_distance(self.z).to(u.cm)
