@@ -660,8 +660,8 @@ class BADFit():
 			fit_ax = fig.add_subplot(num_params, num_params, (fit_plot[0], fit_plot[-1]))
 
 		for ind, ax in enumerate(hist_axs):
-			current_dist = np.array(np.transpose(flattened_mcmc_chain)[ind])
-			sns.histplot(current_dist, kde='False', ax = ax, color='C0', fill=True, element="step")
+			current_dist = np.transpose(flattened_mcmc_chain)[ind]
+			sns.histplot(np.array(current_dist), kde='False', ax = ax, color='C0', fill=True, element="step")
 			ax.tick_params(axis='both', which='both', direction='in', left=False, labelleft=False, labelbottom=False)
 			ax.spines['top'].set_visible(False)
 			ax.spines['right'].set_visible(False)
