@@ -16,7 +16,7 @@
 #########
 # To Do #
 #########
-# Cleanup
+# AGNSED and AGNSLIM
 #
 #
 
@@ -89,6 +89,12 @@ class BADFit():
 
 		Parameters:
 		-----------
+		name: string
+			name of the output files, same name will overwrite file
+			
+		modelChoice: string
+			choose from ['KERRBB', 'SLIMBH']
+			
 		lam: 1-D array
 			wavelength in unit of Angstrom in rest-frame
  
@@ -113,7 +119,7 @@ class BADFit():
 		"""
 		self.name = name
 		self.cosmo = FlatLambdaCDM(H0=70, Om0=0.3)
-		self.modelChoice = modelChoice # [KERRBB, SLIMBH]
+		self.modelChoice = modelChoice 
 		self.inputLam = np.asarray(lam, dtype=np.float64)
 		self.inputFlux = np.asarray(flux, dtype=np.float64)
 		self.inputFluxError = np.asarray(eflux, dtype=np.float64)
@@ -298,6 +304,7 @@ class BADFit():
 		AGN_RvA = 2.7
 		AGN_fA = 0.2
 		AGN_Av = AGN_Ebv * AGN_RvA
+		
 	
 		lam, flux, eflux = self.calcFlux(data[0], data[1], data[2])
 	
@@ -354,18 +361,26 @@ class BADFit():
 		############
 		# Controls #
 		############
-
+		# Mbh parameter is required in all models #
+		
 		## General ##
 		redshift = self.z
+		prop_dist = self.cosmo.comoving_distance(redshift).to(u.Mpc).value
 
 		mbh = 9.5 # log10(Msun)
-		mdot = 90 # in Msun/yr
+		mdot = 90. # in Msun/yr
 		edd_rat = 0.6 # Eddington ratio
 		a, theta = 0.6, 0.8 # spin, cos(i)
+		
+		kTe_hot, kTe_warm = 100., 0.2
+		Gamma_hot, Gamma_warm = 1.7, 2.7
+		R_hot, R_warm, R_out, R_in = 10., 20., 2., -1.
+		Htmax = 10.
+		
 
 		eta = 0 # disk power from torque over accretion power
 		alpha = 0.01 # alpha-viscosity
-		fcol = 1 # hardening factor
+		fcol = 1. # hardening factor
 
 		rflag, lflag, vflag = 1, 1, 1 # self-irradiation, limb darkening, consider height profile
 
@@ -379,18 +394,18 @@ class BADFit():
 		# i - inclination in deg (0 <= i < 85), 0 for face-on
 		# Mbh - black hole mass in Msuns
 		# Mdd - black hole accretion rate in 10^18 g/s
-		# dl - luminosity distance in kpc
+		# z - redshift
 		# fcol - spectral hardening factor Tcol/Teff, 1 for Campitiello
 		# rflag - switch for self-irradiation, keep on at 1
 		# lflag - switch for limb darkening, keep on at10
 		# norm - normalisation
 
-		# Changed to 10^9 Mbh, dl to z, mdot to Msun/yr
+		# Changed to log10(Mbh), dl to z, cos(theta), mdot to Msun/yr. log10(Mdot)
 		kerrbb_parinfo = [{'fixed': True, 'limits':(0, 1), 'label':'eta', 'units':''}, # eta
 						{'fixed': False, 'limits':(-0.99, 0.99), 'label':'$a$', 'units':'$\\frac{J\,c}{GM^2}$'}, # a
 						{'fixed': False, 'limits':(0.4, 1), 'label':'cos$(\\theta_{\\rm{inc}})$', 'units':''}, # cos(i)
 						{'fixed': False, 'limits':(8, 11), 'label':'log(M$_{\\rm{BH}}$/M$_{\\odot}$)', 'units':''}, # Mbh
-						{'fixed': False, 'limits':(-3, 3), 'label':'$\\dot{\\rm{M}}$', 'units':'M$_{\\odot}$ yr$^{-1}$'}, # Mdd
+						{'fixed': False, 'limits':(-3, 3), 'label':'log($\\dot{\\rm{M}}$/M$_{\\odot}$ yr$^{-1}$)', 'units':''}, # Mdd
 						{'fixed': True, 'limits':(redshift, redshift), 'label':'$z$', 'units':''}, # redshift
 						{'fixed': True, 'limits':(0.5, 2.7), 'label':'fcol', 'units':''}, # fcol
 						{'fixed': True, 'limits':(0, 1), 'label':'rflag', 'units':''}, # rflag
@@ -399,7 +414,7 @@ class BADFit():
 			
 		kerrbb_init_params = [eta, a, theta, mbh, mdot, redshift, fcol, rflag, lflag, norm]
 		kerrbb_model = xspec.XSkerrbb()
-		kerrbb_setup = [kerrbb_parinfo, kerrbb_init_params, kerrbb_model]
+		kerrbb_setup = [kerrbb_parinfo, kerrbb_init_params, kerrbb_model, self.kerrbb_evalModel]
 	
 		#######################
 		## SLIMBH Parameters ##
@@ -409,16 +424,16 @@ class BADFit():
 		# lumin - disk luminosity in Eddington units, (0.05 < lumin < 1.2)
 		# alpha - alpha viscosity
 		# i - inclination in deg (0 <= i < 85), 0 for face-on
-		# dl - luminosity distance in kpc
+		# z - redshift
 		# fcol - spectral hardening factor Tcol/Teff, 1 for Campitiello
 		# lflag - switch for limb darkening, keep on at 1
 		# vflag - switch for height profile, keep on at 1
 		# norm - normalisation
 
-		# Changed to 10^9 Mbh, dl to z
-		slimbh_parinfo = [{'fixed': False, 'limits':(8, 11), 'label':'log(M$_{\\rm{BH}}$/M$_{\\odot}$)', 'units': ''}, #'units':'$\\times 10^9$ M$_{\\odot}$'}, # Mbh
+		# Changed to log10(Mbh), dl to z, cos(theta)
+		slimbh_parinfo = [{'fixed': False, 'limits':(7, 11), 'label':'log(M$_{\\rm{BH}}$/M$_{\\odot}$)', 'units': ''}, # Mbh
 						{'fixed': False, 'limits':(0, 0.99), 'label':'$a$', 'units':'$\\frac{J\,c}{GM^2}$'}, # a
-						{'fixed': False, 'limits':(0.05, 1.2), 'label':'L$_{\\rm{disc}}$', 'units':'L$_{\\rm{Edd}}$'}, # lumin
+						{'fixed': False, 'limits':(0.05, 1.25), 'label':'L$_{\\rm{disc}}$', 'units':'L$_{\\rm{Edd}}$'}, # lumin
 						{'fixed': True, 'limits':(0.005, 0.1), 'label':'$\alpha$', 'units':''}, # alpha
 						{'fixed': False, 'limits':(0.4, 1), 'label':'cos$(\\theta_{\\rm{inc}})$', 'units':''}, # cos(i)
 						{'fixed': True, 'limits':(redshift, redshift), 'label':'$z$', 'units':''}, # redshift
@@ -429,18 +444,101 @@ class BADFit():
 			
 		slimbh_init_params = [mbh, a, edd_rat, alpha, theta, redshift, fcol, lflag, vflag, norm]
 		slimbh_model = xspec.XSslimbh()
-		slimbh_setup = [slimbh_parinfo, slimbh_init_params, slimbh_model]
+		slimbh_setup = [slimbh_parinfo, slimbh_init_params, slimbh_model, self.slimbh_evalModel]
+	
+		
+		#######################
+		## AGNSED Parameters ##
+		#######################
+		# Mbh - black hole mass in Msuns
+		# dist - comoving (proper) distance in Mpc
+		# logmdot - log10 of mass accretion rate in Eddington units
+		# a - black hole spin (-1 < a < 0.998)
+		# cosi - cosine of the inclination angle i for the warm Comptonising component and the outer disc
+		# kTe_hot - electron temperature for the hot Comptonisation component in keV
+		# kTe_warm - electron temperature for the warm Comptonisation component in keV
+		# Gamma_hot - spectral index of the hot Comptonisation component
+		# Gamma_warm - spectral index of the warm Comptonisation component
+		# R_hot - outer radius of the hot Comptonisation component in Rg
+		# R_warm - outer radius of the warm Comptonisation component in Rg
+		# logRout - log of the outer radius of the disc in units of Rg
+		# Htmax -  upper limit of the scale height for the hot Comptonisation component in Rg
+		# reprocess - whether reprocessing is considered, keep on at 1
+		# z - redshift
+		# norm - normalisation
+		
+		
+		agnsed_parinfo = [{'fixed': False, 'limits':(8, 11), 'label':'log(M$_{\\rm{BH}}$/M$_{\\odot}$)', 'units': ''}, # Mbh
+						 {'fixed': True, 'limits':(0.01, 1E9), 'label':'dist', 'units':'Mpc'}, # dist
+						 {'fixed': False, 'limits':(-10, 2), 'label':'logmdot', 'units':''}, # log mdot
+						 {'fixed': False, 'limits':(-1, 0.998), 'label':'$a$', 'units':'$\\frac{J\,c}{GM^2}$'}, # a
+						 {'fixed': False, 'limits':(0.05, 1.0), 'label':'cos$(\\theta_{\\rm{inc}})$', 'units':''}, # cos(i)
+						 {'fixed': True, 'limits':(10, 300), 'label':'kTe_hot', 'units':'keV'}, # kte_hot
+						 {'fixed': True, 'limits':(0.1, 0.5), 'label':'kTe_warm', 'units':'keV'}, # kte_warm
+						 {'fixed': True, 'limits':(1.3, 3), 'label':'Gamma_hot', 'units':''}, # Gamma_hot
+						 {'fixed': True, 'limits':(2, 10), 'label':'Gamma_warm', 'units':''}, # Gamma_warm
+						 {'fixed': True, 'limits':(6, 500), 'label':'R_hot', 'units':'R$_{\\rm{g}}$'}, # R_hot
+						 {'fixed': True, 'limits':(6, 500), 'label':'R_warm', 'units':'R$_{\\rm{g}}$'}, # R_warm
+						 {'fixed': True, 'limits':(-3, 7), 'label':'log(R$_{\\rm{out}}$/R$_{\\rm{g}}$)', 'units':''}, # logRout
+						 {'fixed': True, 'limits':(6, 10), 'label':'Htmax', 'units':'R$_{\\rm{g}}$'}, # Htmax
+						 {'fixed': True, 'limits':(0, 1), 'label':'reprocess', 'units':''}, # reprocess
+						 {'fixed': True, 'limits':(redshift, redshift), 'label':'redshift', 'units':''}, # redshift
+						 {'fixed': True, 'limits':(0, 1), 'label':'norm', 'units':''}] # norm
+		
+		agnsed_init_params = [mbh, prop_dist, np.log10(edd_rat), a, theta, kTe_hot, kTe_warm, Gamma_hot, Gamma_warm, R_hot, R_warm, R_out, Htmax, rflag, redshift, norm]
+		agnsed_model = xspec.XSagnsed()
+		agnsed_setup = [agnsed_parinfo, agnsed_init_params, agnsed_model, self.agnsed_evalModel]
+		
+		########################
+		## AGNSLIM Parameters ##
+		########################
+		# Mbh - black hole mass in Msuns
+		# dist - comoving (proper) distance in Mpc
+		# logmdot - log10 of mass accretion rate in Eddington units
+		# a - black hole spin (-1 < a < 0.998)
+		# cosi - cosine of the inclination angle i for the warm Comptonising component and the outer disc
+		# kTe_hot - electron temperature for the hot Comptonisation component in keV
+		# kTe_warm - electron temperature for the warm Comptonisation component in keV
+		# Gamma_hot - spectral index of the hot Comptonisation component
+		# Gamma_warm - spectral index of the warm Comptonisation component
+		# R_hot - outer radius of the hot Comptonisation component in Rg
+		# R_warm - outer radius of the warm Comptonisation component in Rg
+		# logRout - log of the outer radius of the disc in units of Rg
+		# Rin - inner radius of the disc in Rg
+		# z - redshift
+		# norm - normalisation
+		
+		
+		agnslim_parinfo = [{'fixed': False, 'limits':(8, 11), 'label':'log(M$_{\\rm{BH}}$/M$_{\\odot}$)', 'units': ''}, # Mbh
+						 {'fixed': True, 'limits':(0.01, 1E9), 'label':'dist', 'units':'Mpc'}, # dist
+						 {'fixed': False, 'limits':(-10, 2), 'label':'logmdot', 'units':''}, # log mdot
+						 {'fixed': False, 'limits':(-1, 0.998), 'label':'$a$', 'units':'$\\frac{J\,c}{GM^2}$'}, # a
+						 {'fixed': False, 'limits':(0.05, 1.0), 'label':'cos$(\\theta_{\\rm{inc}})$', 'units':''}, # cos(i)
+						 {'fixed': True, 'limits':(10, 300), 'label':'kTe_hot', 'units':'keV'}, # kte_hot
+						 {'fixed': True, 'limits':(0.1, 0.5), 'label':'kTe_warm', 'units':'keV'}, # kte_warm
+						 {'fixed': True, 'limits':(1.3, 3), 'label':'Gamma_hot', 'units':''}, # Gamma_hot
+						 {'fixed': True, 'limits':(2, 10), 'label':'Gamma_warm', 'units':''}, # Gamma_warm
+						 {'fixed': True, 'limits':(6, 500), 'label':'R_hot', 'units':'R$_{\\rm{g}}$'}, # R_hot
+						 {'fixed': True, 'limits':(6, 500), 'label':'R_warm', 'units':'R$_{\\rm{g}}$'}, # R_warm
+						 {'fixed': True, 'limits':(-3, 7), 'label':'log(R$_{\\rm{out}}$/R$_{\\rm{g}}$)', 'units':''}, # logRout
+						 {'fixed': True, 'limits':(-1, 100), 'label':'Rin', 'units':'R$_{\\rm{g}}$'}, # Rin
+						 {'fixed': True, 'limits':(redshift, redshift), 'label':'redshift', 'units':''}, # redshift
+						 {'fixed': True, 'limits':(0, 1), 'label':'norm', 'units':''}] # norm
+		
+		agnslim_init_params = [mbh, prop_dist, np.log10(edd_rat), a, theta, kTe_hot, kTe_warm, Gamma_hot, Gamma_warm, R_hot, R_warm, R_out, R_in, rflag, redshift, norm]
+		agnslim_model = xspec.XSagnslim()
+		agnslim_setup = [agnslim_parinfo, agnslim_init_params, agnslim_model, self.agnslim_evalModel]
+		
+		modelID = ['KERRBB', 'SLIMBH', 'AGNSED', 'AGNSLIM']
+		models = [kerrbb_setup, slimbh_setup, agnsed_setup, agnslim_setup]
 
-
-		if Choice == 'KERRBB':
-			setup = kerrbb_setup
-		elif Choice == 'SLIMBH':
-			setup = slimbh_setup
+		if Choice in modelID:
+			setup = models[modelID.index(Choice)]
+		else:
+			setup = models[0]
 			
 		# Get labels and init mcmc params #
-		self.parinfo = setup[0]
-		self.init_params = setup[1]
-		self.model = setup[2]
+		self.parinfo, self.init_params, self.model, self.evalBHModel = setup
 		mcmc_params = []
 		self.par_labels = []
 		self.par_units = []
@@ -452,41 +550,42 @@ class BADFit():
 
 		self.ndim = len(mcmc_params)
 		return setup
-			
 
-	def evalModel(self, bestfitp, freq):
-		if self.modelChoice == 'KERRBB':
-			return self.kerrbb_evalModel(bestfitp, freq)
-		elif self.modelChoice == 'SLIMBH':
-			return self.slimbh_evalModel(bestfitp, freq)
-
-
-	def kerrbb_evalModel(self, bestfitp, freq): # in rest frame
+	def evalModel(self, params, freq):
 		ekeV = 10**11. * con.h * 6.242E15
-		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
-		current_params[2] = np.arccos(current_params[2])*180./np.pi # Convert cos(i) to deg
-		current_params[3] = 10**(current_params[3]) # Convert log10(Msun) to Msun
-		current_params[4] = 10**current_params[4]
-		current_params[4] *= 1.989E33/(10**18)/(3.154E7) # Convert Msun/yr to 10^18 g/s
-		current_params[5] = self.cosmo.luminosity_distance(self.z).to(u.kpc).value # Convert redshift to dl in kpc
 		dl = self.cosmo.luminosity_distance(self.z).to(u.cm)
 		freq_kev = (con.h*6.242E15) * freq
 		freq_lo = freq_kev - ekeV
 		freq_hi = freq_kev + ekeV
-		ymodel = self.model.calc(current_params, freq_lo, freq_hi)/(2*ekeV)*freq_kev*4.*np.pi*dl.value**2*con.h*10**(7)*freq
+		ymodel = self.model.calc(params, freq_lo, freq_hi)/(2*ekeV)*freq_kev*4.*np.pi*dl.value**2*con.h*10**(7)*freq
+		return ymodel
+
+	def kerrbb_evalModel(self, bestfitp, freq): # in rest frame
+		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
+		current_params[2] = np.arccos(current_params[2])*180./np.pi # Convert cos(i) to deg
+		current_params[3] = 10**(current_params[3]) # Convert log10(Msun) to Msun
+		current_params[4] = 10**(current_params[4]) # Convert log10(Msun/yr) to Msun/yr	
+		current_params[4] *= 1.989E33/(10**18)/(3.154E7) # Convert Msun/yr to 10^18 g/s
+		current_params[5] = self.cosmo.luminosity_distance(self.z).to(u.kpc).value # Convert redshift to dl in kpc
+		ymodel = self.evalModel(current_params, freq)
 		return ymodel
 	
 	def slimbh_evalModel(self, bestfitp, freq): # in rest frame
-		ekeV = 10**11. * con.h * 6.242E15
 		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
 		current_params[0] = 10**(current_params[0]) # Convert log10(Msun) to Msun
 		current_params[4] = np.arccos(current_params[4])*180./np.pi # Convert cos(i) to deg
 		current_params[5] = self.cosmo.luminosity_distance(self.z).to(u.kpc).value # Convert redshift to dl in kpc
-		dl = self.cosmo.luminosity_distance(self.z).to(u.cm)
-		freq_kev = (con.h*6.242E15) * freq
-		freq_lo = freq_kev - ekeV
-		freq_hi = freq_kev + ekeV
-		ymodel = self.model.calc(current_params, freq_lo, freq_hi)/(2*ekeV)*freq_kev*4.*np.pi*dl.value**2*con.h*10**(7)*freq
+		ymodel = self.evalModel(current_params, freq)
+		return ymodel
+		
+	def agnsed_evalModel(self, bestfitp, freq): # in rest frame
+		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
+		ymodel = self.evalModel(current_params, freq)
+		return ymodel 
+		
+	def agnslim_evalModel(self, bestfitp, freq): # in rest frame
+		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
+		ymodel = self.evalModel(current_params, freq)
 		return ymodel
 	
 	
@@ -502,14 +601,15 @@ class BADFit():
 	
 	def paramPriors(self, bestfitp): #log
 		current_params = self.deriveParams(self.parinfo, self.init_params, bestfitp)
-		mbhIndex = 0 #MODIFY THIS
-		if self.modelChoice == 'KERRBB':
-			mbhIndex = 3
+			
 		for index, par in enumerate(self.parinfo):
 			par_val = current_params[index]
 			current_limits = par['limits']
+			if par['label'] == 'log(M$_{\\rm{BH}}$/M$_{\\odot}$)':
+				mbhIndex = index
 			if par_val < current_limits[0] or par_val > current_limits[1]:
 				return -np.inf # if priors not satisfied
+			
 		lnprior = 0.0
 		if self.priorMassFunction:
 			lnprior = self.massFunctionLnLike[np.argmin(np.abs(self.massFunctionMbh-current_params[mbhIndex]))]
@@ -518,7 +618,7 @@ class BADFit():
 		return lnprior 
 	
 	def residual(self, bestfitp, data_freq, data_power, data_epower):
-		model_yy = self.evalModel(bestfitp, data_freq)
+		model_yy = self.evalBHModel(bestfitp, data_freq)
 	
 		# logfit
 		model_yy = np.log10(model_yy)
@@ -556,7 +656,7 @@ class BADFit():
 		draw = np.floor(np.random.uniform(0,len(flattened_chain),size=nsamples)).astype(int)
 		params = flattened_chain[draw]
 		for i in params:
-			mod = self.evalModel(i, xx)
+			mod = self.evalBHModel(i, xx)
 			models.append(mod)
 		spread = np.std(models,axis=0)
 		med_model = np.median(models,axis=0)
@@ -661,7 +761,7 @@ class BADFit():
 
 		for ind, ax in enumerate(hist_axs):
 			current_dist = np.transpose(flattened_mcmc_chain)[ind]
-			sns.histplot(np.array(current_dist), kde='False', ax = ax, color='C0', fill=True, element="step")
+			sns.histplot(current_dist, kde='False', ax = ax, color='C0', fill=True, element="step")
 			ax.tick_params(axis='both', which='both', direction='in', left=False, labelleft=False, labelbottom=False)
 			ax.spines['top'].set_visible(False)
 			ax.spines['right'].set_visible(False)
@@ -738,7 +838,7 @@ class BADFit():
 	
 		med_model, spread = self.sampleWalkers(100, samples, freq) # find median model
 		param_max  = samples[np.argmax(lnlikelihoods)] # highest likelihood model
-		new_bestfit = self.evalModel(param_max, freq)
+		new_bestfit = self.evalBHModel(param_max, freq)
 
 		print(np.nanmax(lnlikelihoods))
 		print(param_max)
@@ -764,6 +864,9 @@ class BADFit():
 		ax.text(x=0.05, y=0.95, s='z = %.3f\n%.3f' %(self.z, np.nanmax(lnlikelihoods)), transform=ax.transAxes, fontsize=10, 
 				verticalalignment='top', horizontalalignment='left',
 				bbox=dict(facecolor='white', edgecolor='none'))
+		#ax.text(x=0.05, y=0.95, s='z = %.3f' %(self.z), transform=ax.transAxes, fontsize=10, 
+		#		verticalalignment='top', horizontalalignment='left',
+		#		bbox=dict(facecolor='white', edgecolor='none'))
 
 		ax.tick_params(axis='both', which='both', direction='in', labelbottom=False, labelleft=False, top=True, right=True, labeltop=True, labelright=True)
 		ax.tick_params(axis='both', which='minor', labelright=False, labeltop=False)
