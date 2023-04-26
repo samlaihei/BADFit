@@ -834,7 +834,7 @@ class BADFit():
 	
 
 	def createPlot(self, samples, lnlikelihoods, data, redshift):
-		freq = np.linspace(0.8*np.min(data[0]), 2.0*np.max(data[0]), 1000)
+		freq = np.linspace(0.8*np.min(data[0]), 1.1*np.max(data[0]), 1000)
 	
 		med_model, spread = self.sampleWalkers(100, samples, freq) # find median model
 		param_max  = samples[np.argmax(lnlikelihoods)] # highest likelihood model
@@ -856,7 +856,7 @@ class BADFit():
 		ax.set_xlabel('Rest Frequency [Hz]', loc='right')
 		ax.set_ylabel('$\\nu L_{\\nu}$ [erg/s]', loc='top')
 	
-		ax.set_ylim([ax.get_ylim()[0], 1.5*ax.get_ylim()[1]])
+		ax.set_ylim([ax.get_ylim()[0], 1.1*ax.get_ylim()[1]])
 	
 		ax.set_xscale('log')
 		ax.set_yscale('log')
