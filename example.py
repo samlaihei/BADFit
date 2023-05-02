@@ -1,6 +1,9 @@
 # Example
 import BADFit
 import pandas as pd
+import os
+
+os.system("mkdir output")
 
 redshift = 4.692
 datafile = 'data/example.csv'
