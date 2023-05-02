@@ -20,7 +20,7 @@ We thank Marcin Marculewicz, Ashley Hai Tung Tan, and Yanina Lopez Bonilla for t
 
 ## Cite this code
 
-The preferred citation for this code is the following:
+The preferred citations for this code are the following:
 
 > @ARTICLE{2023MNRAS.521.3682L,
 >       author = {{Lai (赖民希)}, Samuel and {Wolf}, Christian and {Onken}, Christopher A. and {Bian (边福彦)}, Fuyan},
