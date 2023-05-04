@@ -219,8 +219,9 @@ class BADFit():
 		return (self.createPlot(sampler.flatchain, sampler.flatlnprobability, self.data, self.z))	
 
 
-	def createPlotFromFile(self, forceData=False, fitWindow=[3.E14, 1.91E15], 
-						   kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05):
+	def h5ReadFile(self, forceData=False, fitWindow=[3.E14, 1.91E15], 
+				   kde_bandwidth = 0.75, errorFloor = 0.05, errorFactor = 0.05,
+				   createPlot=True, returnMbh=False, returnArrays=False):
 		if forceData:
 			self.data = self.inputData
 		else:
@@ -250,9 +251,12 @@ class BADFit():
 					current_hi = np.quantile(np.transpose(samples)[ind], 0.84) # 84th percentile
 		
 		# Return max likelihood
-		#return [current_lo, current_med, current_hi]
-			
-		return (self.createPlot(samples, likelihoods, self.data, self.z))
+		if returnMbh:
+		    return [current_lo, current_med, current_hi]
+		elif returnArrays:
+		    return samples, likelihoods
+		elif createPlot:
+		    return (self.createPlot(samples, likelihoods, self.data, self.z))
 
 
 
