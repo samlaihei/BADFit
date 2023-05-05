@@ -236,6 +236,12 @@ eSPEC_1Dsmooth = median_smooth(eSPEC_1D, width=9)
 
 SPEC_freq, SPEC_power, SPEC_epower = calc_power(redshift, SPEC_1Dsmooth.spectral_axis.value, SPEC_1Dsmooth.flux.value, eSPEC_1Dsmooth.flux.value)
 
+SPEC_freq = np.array([])
+SPEC_power = np.array([])
+SPEC_epower = np.array([])
+SPEC_lam = np.array([])
+SPEC_flux = np.array([])
+SPEC_eflux = np.array([])
 
 SPEC_freq_OG = np.copy(SPEC_freq)
 SPEC_lam_OG = np.copy(SPEC_lam)
@@ -254,16 +260,16 @@ AGN_Ebv = 0.00
 AGN_Av = AGN_Ebv * AGN_RvA
 
 PHOT_lam, PHOT_flux, PHOT_eflux = MW_extinction(redshift, MW_Rv, MW_Ebv, PHOT_lam, PHOT_flux, PHOT_eflux)
-SPEC_lam, SPEC_flux, SPEC_eflux = MW_extinction(redshift, MW_Rv, MW_Ebv, SPEC_lam, SPEC_flux, SPEC_eflux)
+#SPEC_lam, SPEC_flux, SPEC_eflux = MW_extinction(redshift, MW_Rv, MW_Ebv, SPEC_lam, SPEC_flux, SPEC_eflux)
 
 #PHOT_lam, PHOT_flux, PHOT_eflux = AGN_extinction(AGN_RvA, AGN_fA, AGN_Av, PHOT_lam, PHOT_flux, PHOT_eflux)
 #SPEC_lam, SPEC_flux, SPEC_eflux = AGN_extinction(AGN_RvA, AGN_fA, AGN_Av, SPEC_lam, SPEC_flux, SPEC_eflux)
 
 PHOT_lam, PHOT_flux, PHOT_eflux = GC10_MEC_extinction(AGN_Av, PHOT_lam, PHOT_flux, PHOT_eflux)
-SPEC_lam, SPEC_flux, SPEC_eflux = GC10_MEC_extinction(AGN_Av, SPEC_lam, SPEC_flux, SPEC_eflux)
+#SPEC_lam, SPEC_flux, SPEC_eflux = GC10_MEC_extinction(AGN_Av, SPEC_lam, SPEC_flux, SPEC_eflux)
 
 PHOT_freq, PHOT_power, PHOT_epower = calc_power(redshift, PHOT_lam, PHOT_flux, PHOT_eflux)
-SPEC_freq, SPEC_power, SPEC_epower = calc_power(redshift, SPEC_lam, SPEC_flux, SPEC_eflux)
+#SPEC_freq, SPEC_power, SPEC_epower = calc_power(redshift, SPEC_lam, SPEC_flux, SPEC_eflux)
 
 
 
@@ -279,10 +285,10 @@ PHOT_power = PHOT_power[np.logical_and(PHOT_freq_OG > freq_low, PHOT_freq_OG < f
 PHOT_epower = PHOT_epower[np.logical_and(PHOT_freq_OG > freq_low, PHOT_freq_OG < freq_high)]
 PHOT_lam, PHOT_flux, PHOT_eflux = calc_flux(redshift, PHOT_freq, PHOT_power, PHOT_epower)
 
-SPEC_freq = SPEC_freq[np.logical_and(SPEC_freq_OG > freq_low, SPEC_freq_OG < freq_high)]
-SPEC_power = SPEC_power[np.logical_and(SPEC_freq_OG > freq_low, SPEC_freq_OG < freq_high)]
-SPEC_epower = SPEC_epower[np.logical_and(SPEC_freq_OG > freq_low, SPEC_freq_OG < freq_high)]
-SPEC_lam, SPEC_flux, SPEC_eflux = calc_flux(redshift, SPEC_freq, SPEC_power, SPEC_epower)
+#SPEC_freq = SPEC_freq[np.logical_and(SPEC_freq_OG > freq_low, SPEC_freq_OG < freq_high)]
+#SPEC_power = SPEC_power[np.logical_and(SPEC_freq_OG > freq_low, SPEC_freq_OG < freq_high)]
+#SPEC_epower = SPEC_epower[np.logical_and(SPEC_freq_OG > freq_low, SPEC_freq_OG < freq_high)]
+#SPEC_lam, SPEC_flux, SPEC_eflux = calc_flux(redshift, SPEC_freq, SPEC_power, SPEC_epower)
 
 
 
@@ -322,10 +328,10 @@ linewidth_vel = FWHM_factor * MgII_FWHM #km/s
 Emission_masks = line_masks(line_wav[qso_weight > 0], linewidth_vel)
 
 all_masks = [Fe_masks, Emission_masks]
-data_mask = make_mask(SPEC_lam, all_masks)
+#data_mask = make_mask(SPEC_lam, all_masks)
 
-FAUX_lam, FAUX_flux, FAUX_eflux = make_fauxtometry(SPEC_lam, data_mask, SPEC_flux, SPEC_eflux)
-FAUX_freq, FAUX_power, FAUX_epower = calc_power(redshift, FAUX_lam, FAUX_flux, FAUX_eflux)
+#FAUX_lam, FAUX_flux, FAUX_eflux = make_fauxtometry(SPEC_lam, data_mask, SPEC_flux, SPEC_eflux)
+#FAUX_freq, FAUX_power, FAUX_epower = calc_power(redshift, FAUX_lam, FAUX_flux, FAUX_eflux)
 
 
 
@@ -348,8 +354,10 @@ if False:
 
 filter_files = glob.glob('filters/*.txt')
 filter_avglam = []
-mod_PHOT_power = PHOT_power[np.logical_or(PHOT_lam < np.nanmin(SPEC_lam_OG), PHOT_lam > np.nanmax(SPEC_lam_OG))]
-mod_PHOT_lam = PHOT_lam[np.logical_or(PHOT_lam < np.nanmin(SPEC_lam_OG), PHOT_lam > np.nanmax(SPEC_lam_OG))]
+#mod_PHOT_power = PHOT_power[np.logical_or(PHOT_lam < np.nanmin(SPEC_lam_OG), PHOT_lam > np.nanmax(SPEC_lam_OG))]
+#mod_PHOT_lam = PHOT_lam[np.logical_or(PHOT_lam < np.nanmin(SPEC_lam_OG), PHOT_lam > np.nanmax(SPEC_lam_OG))]
+mod_PHOT_power = np.copy(PHOT_power)
+mod_PHOT_lam = np.copy(PHOT_lam)
 for filter_file in filter_files:
     lamF,filt = np.loadtxt(filter_file, unpack=True)
     filter_avglam.append(np.average(lamF, weights=filt))
@@ -361,7 +369,6 @@ lamS *= (1+redshift)
 
 CORR_freq, CORR_power, CORR_epower = np.array([]), np.array([]), np.array([])
 for temp_lam, temp_pow in zip(mod_PHOT_lam, mod_PHOT_power):
-    print(temp_lam, temp_pow)
     filt_file = filter_files[np.argmin(np.abs(filter_avglam-temp_lam))]
     lamF,filt = np.loadtxt(filt_file, unpack=True)
 
@@ -382,6 +389,8 @@ for temp_lam, temp_pow in zip(mod_PHOT_lam, mod_PHOT_power):
     all_masks = [Fe_masks, Emission_masks] # same masks defined for fauxtometry
     data_mask = make_mask(temp_lamS, all_masks)
 
+    data_mask[np.logical_and(temp_lamS > 3050, temp_lamS < 3150)] = True
+    data_mask[np.logical_and(temp_lamS > 1990, temp_lamS < 2150)] = False
     temp_lam, temp_flux, temp_eflux = make_fauxtometry(temp_lamS, data_mask, temp_specS, temp_especS)
     temp_freq, temp_power, temp_epower = calc_power(redshift, temp_lam, temp_flux, temp_eflux)
     if len(temp_freq) > 0:
@@ -396,17 +405,18 @@ CORR_freq, CORR_epower = sort_ybyx(CORR_freq, CORR_epower)
 # Final Data #
 ##############
 
-PHOT_FAUX_freq = np.concatenate((PHOT_freq, FAUX_freq))
-_, PHOT_FAUX_power = sort_ybyx(PHOT_FAUX_freq, np.concatenate((PHOT_power, FAUX_power)))
-PHOT_FAUX_freq, PHOT_FAUX_epower = sort_ybyx(PHOT_FAUX_freq, np.concatenate((PHOT_epower, FAUX_epower)))
+#PHOT_FAUX_freq = np.concatenate((PHOT_freq, FAUX_freq))
+#_, PHOT_FAUX_power = sort_ybyx(PHOT_FAUX_freq, np.concatenate((PHOT_power, FAUX_power)))
+#PHOT_FAUX_freq, PHOT_FAUX_epower = sort_ybyx(PHOT_FAUX_freq, np.concatenate((PHOT_epower, FAUX_epower)))
 
-CORR_FAUX_freq = np.concatenate((CORR_freq, FAUX_freq))
-_, CORR_FAUX_power = sort_ybyx(CORR_FAUX_freq, np.concatenate((CORR_power, FAUX_power)))
-CORR_FAUX_freq, CORR_FAUX_epower = sort_ybyx(CORR_FAUX_freq, np.concatenate((CORR_epower, FAUX_epower)))
+#CORR_FAUX_freq = np.concatenate((CORR_freq, FAUX_freq))
+#_, CORR_FAUX_power = sort_ybyx(CORR_FAUX_freq, np.concatenate((CORR_power, FAUX_power)))
+#CORR_FAUX_freq, CORR_FAUX_epower = sort_ybyx(CORR_FAUX_freq, np.concatenate((CORR_epower, FAUX_epower)))
 
 
 # Setup Data #
-data = [CORR_FAUX_freq, CORR_FAUX_power, CORR_FAUX_epower] # Combined corrected photometry and fauxtometry
+#data = [CORR_FAUX_freq, CORR_FAUX_power, CORR_FAUX_epower] # Combined corrected photometry and fauxtometry
+data = [CORR_freq, CORR_power, CORR_epower]
 
 
 pdata = pd.DataFrame()
