@@ -11,8 +11,7 @@ https://sherpa.readthedocs.io/en/latest/install.html
 Source install with conda:
 https://sherpa.readthedocs.io/en/latest/developer/index.html#source-install-with-conda
 
-Run example.py after installation and use it as a guide. A successful run will populate the output directory.
-
+Refer to __[Tutorial.ipynb](https://github.com/samlaihei/BADFit/blob/main/Tutorial.ipynb)__ for a detailed guide.
 
 ## Acknowledgements
 
