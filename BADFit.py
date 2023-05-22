@@ -237,7 +237,7 @@ class BADFit():
 			samples = np.ndarray.flatten(samples)
 			samples = samples.reshape(int(len(samples)/ndim), ndim)
 			samples = samples[:int(nwalkers*niter)]
-
+			
 			c = ChainConsumer().add_chain(samples, parameters=self.par_labels)
 			summary = c.analysis.get_summary()
 			print(c.analysis.get_summary())
@@ -874,7 +874,7 @@ class BADFit():
 
 		ax.tick_params(axis='both', which='both', direction='in', labelbottom=False, labelleft=False, top=True, right=True, labeltop=True, labelright=True)
 		ax.tick_params(axis='both', which='minor', labelright=False, labeltop=False)
-		plt.savefig('output/'+self.name+'.png', dpi=200)
+		plt.savefig('output/'+self.name+'.png', dpi=200, facecolor='white', transparent=False)
 		return ax
 
     

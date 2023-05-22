@@ -13,6 +13,11 @@ https://sherpa.readthedocs.io/en/latest/developer/index.html#source-install-with
 
 Refer to __[Tutorial.ipynb](https://github.com/samlaihei/BADFit/blob/main/Tutorial.ipynb)__ for a detailed guide.
 
+The key features of this code are:
+-  Provide a Bayesian framework to constrain BH properties from a provided Spectral Energy Distribution (SED) utilising ray-traced models of the multi-temperature thermal accretion disc emission around Kerr BHs. 
+-  Use general extinction curve models to deredden the SED.
+-  Define custom priors and parameter thresholds to influence the resulting model. Freely fix and vary different parameters.
+
 ## Acknowledgements
 
 We thank Marcin Marculewicz, Ashley Hai Tung Tan, and Yanina Lopez Bonilla for testing the installation and raising several issues.
