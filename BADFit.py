@@ -865,7 +865,7 @@ class BADFit():
 		ax.set_xscale('log')
 		ax.set_yscale('log')
 
-		ax.text(x=0.05, y=0.95, s='z = %.3f\n%.3f' %(self.z, np.nanmax(lnlikelihoods)), transform=ax.transAxes, fontsize=10, 
+		ax.text(x=0.05, y=0.95, s='z = %.3f\n$\\chi^2_{\\nu}$ = %.3f' %(self.z, np.nanmax(lnlikelihoods)/(len(data[0])-len(param_max))), transform=ax.transAxes, fontsize=10, 
 				verticalalignment='top', horizontalalignment='left',
 				bbox=dict(facecolor='white', edgecolor='none'))
 		#ax.text(x=0.05, y=0.95, s='z = %.3f' %(self.z), transform=ax.transAxes, fontsize=10, 
