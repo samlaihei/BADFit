@@ -865,7 +865,8 @@ class BADFit():
 		ax.set_xscale('log')
 		ax.set_yscale('log')
 		
-		dof = len(data[0])-len(param_max)
+		dof = len(data[0])-len(param_max) # model is non-linear and parameters are not independent
+		dof = len(data[0])-1 # placeholder dof for nonlinear model, caution that reduced chi-sq may not be useful in this case
 		if dof == 0:
 		    dof = np.inf
 
