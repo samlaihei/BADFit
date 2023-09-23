@@ -529,7 +529,7 @@ class BADFit():
                          {'fixed': True, 'limits':(redshift, redshift), 'label':'redshift', 'units':''}, # redshift
                          {'fixed': True, 'limits':(0, 1), 'label':'norm', 'units':''}] # norm
         
-        agnslim_init_params = [mbh, prop_dist, np.log10(edd_rat), a, theta, kTe_hot, kTe_warm, Gamma_hot, Gamma_warm, R_hot, R_warm, R_out, R_in, rflag, redshift, norm]
+        agnslim_init_params = [mbh, prop_dist, np.log10(edd_rat), a, theta, kTe_hot, kTe_warm, Gamma_hot, Gamma_warm, R_hot, R_warm, R_out, R_in, redshift, norm]
         agnslim_model = xspec.XSagnslim()
         agnslim_setup = [agnslim_parinfo, agnslim_init_params, agnslim_model, self.agnslim_evalModel]
         
