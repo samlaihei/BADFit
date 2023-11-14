@@ -40,7 +40,7 @@ The preferred citations for this code are the following:
 >      archivePrefix = {arXiv},\
 >       eprint = {2302.10397},\
 >      primaryClass = {astro-ph.GA},\
->       adsurl = {https://ui.adsabs.harvard.edu/abs/2023MNRAS.521.3682L},\
+>       adsurl = {https://ui.adsabs.harvard.edu/abs/2023MNRAS.521.3682L} ,\
 >      adsnote = {Provided by the SAO/NASA Astrophysics Data System}\
 > }
 
@@ -53,5 +53,5 @@ The preferred citations for this code are the following:
 > publisher    = {Zenodo},\
 > version      = {v1.0.0},\
 > doi          = {10.5281/zenodo.7772748},\
-> url          = {https://doi.org/10.5281/zenodo.7772748}\
+> url          = {https://doi.org/10.5281/zenodo.7772748} \
 > }
